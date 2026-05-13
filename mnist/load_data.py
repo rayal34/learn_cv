@@ -21,7 +21,7 @@ def load_test_data(root):
         root=root,
         train=False,
         download=True,
-        transform=Compose([ToTensor(), Normalize(mean, std)]),
+        transform=Compose([ToTensor(), Normalize(mean=mean, std=std)]),
     )
 
 

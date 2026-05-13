@@ -7,9 +7,10 @@ import load_data
 import torch
 import torch.nn as nn
 import train_utils
-from model import EarlyStoppingWithCheckpoint, SimpleCNN
+from model import SimpleCNN
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from torchsummary import summary
 
 
 def main(exp_name: str, use_early_stopping: bool = True):
@@ -32,14 +33,21 @@ def main(exp_name: str, use_early_stopping: bool = True):
     )
 
     model = SimpleCNN(exp_config.model)
-    optimizer = torch.optim.SGD(model.parameters(), lr=train_config.learning_rate)
+    print(summary(model, (1, 28, 28)))
+    optimizer = torch.optim.Adam(model.parameters(), lr=train_config.learning_rate)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode="min",
+        patience=train_config.scheduler_patience,
+        factor=train_config.scheduler_factor,
+    )
     loss_fn = nn.CrossEntropyLoss()
 
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print(f"Using device: {device}")
 
     if use_early_stopping:
-        early_stopping = EarlyStoppingWithCheckpoint(
+        early_stopping = train_utils.EarlyStoppingWithCheckpoint(
             model_path=data_config.model_path,
             model_name=exp_name,
             patience=train_config.early_stopping_patience,
@@ -53,8 +61,9 @@ def main(exp_name: str, use_early_stopping: bool = True):
         test_dataloader,
         model,
         loss_fn,
-        optimizer,
         device,
+        optimizer,
+        scheduler=scheduler,
         early_stopping=early_stopping,
         writer=writer,
     )
