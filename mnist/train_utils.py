@@ -1,5 +1,9 @@
+import os
+
 import torch
+from model import EarlyStoppingWithCheckpoint
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 
 def train_loop(dataloader: DataLoader, model, loss_fn, optimizer, device: torch.device):
@@ -54,16 +58,19 @@ def train_many_epochs(
     epochs: int,
     train_dataloader: DataLoader,
     test_dataloader: DataLoader,
-    model,
-    loss_fn,
-    optimizer,
-    device,
-    writer=None,
+    model: torch.nn.Module,
+    loss_fn: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    device: torch.device,
+    early_stopping: EarlyStoppingWithCheckpoint | None = None,
+    writer: SummaryWriter | None = None,
 ):
+
     for epoch in range(epochs):
         train_loss, test_loss, accuracy = train_one_epoch(
             train_dataloader, test_dataloader, model, loss_fn, optimizer, device
         )
+
         print(
             f"Epoch {epoch + 1}/{epochs}  "
             f"train_loss: {train_loss:.4f}  "
@@ -75,4 +82,15 @@ def train_many_epochs(
             writer.add_scalar("Loss/test", test_loss, epoch)
             writer.add_scalar("Accuracy", accuracy, epoch)
 
+        if early_stopping:
+            early_stopping(accuracy, model)
+            if early_stopping.early_stop:
+                print(f"Early stopping at epoch {epoch + 1}")
+                return model
+
     return model
+
+
+def save_model(model: torch.nn.Module, path: str, filename: str) -> None:
+    os.makedirs(path, exist_ok=True)
+    torch.save(model.state_dict(), os.path.join(path, filename))

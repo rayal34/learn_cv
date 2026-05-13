@@ -14,9 +14,10 @@ class DataConfig:
 
 @dataclass
 class TrainingConfig:
-    learning_rate: float = 1e-2
-    batch_size: int = 128
-    num_epochs: int = 10
+    learning_rate: float = 5e-2
+    batch_size: int = 256
+    early_stopping_patience: int = 20
+    num_epochs: int = 100
 
 
 @dataclass
@@ -32,11 +33,13 @@ class ModelConfig:
     num_classes: int = 10
     conv_layers: list[ConvSpec] = field(
         default_factory=lambda: [
-            ConvSpec(6, 5, pool=2),
-            ConvSpec(16, 5, pool=2),
+            ConvSpec(3, 3, pool=2),
+            ConvSpec(64, 3, pool=2),
+            ConvSpec(128, 3, pool=2),
         ]
     )
-    fc_hidden: tuple[int, ...] = (128, 64)
+    fc_hidden: tuple[int, ...] = (256, 128, 64)
+    dropout: float | None = 0.5
 
 
 @dataclass

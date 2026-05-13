@@ -1,49 +1,49 @@
-import os
-
-import pandas as pd
-import torch
-from torch.utils.data import Dataset
+import config
+from torch.utils.data import DataLoader
 from torchvision import datasets
-from torchvision.io import decode_image
-from torchvision.transforms import Lambda, ToTensor
+from torchvision.transforms import Compose, Normalize, ToTensor
 
 
 def load_training_data(root):
+
+    mean, std = get_normalize_mean_std()
     return datasets.MNIST(
         root=root,
         train=True,
         download=True,
-        transform=ToTensor(),
+        transform=Compose([ToTensor(), Normalize(mean=mean, std=std)]),
     )
 
 
 def load_test_data(root):
+    mean, std = get_normalize_mean_std()
     return datasets.MNIST(
         root=root,
         train=False,
         download=True,
-        transform=ToTensor(),
+        transform=Compose([ToTensor(), Normalize(mean, std)]),
     )
 
 
-class MNISTDataset(Dataset):
-    def __init__(
-        self, annotations_file, img_dir, transform=None, target_transform=None
-    ):
-        self.img_labels = pd.read_csv(annotations_file)
-        self.img_dir = img_dir
-        self.transform = transform
-        self.target_transform = target_transform
+def get_normalize_mean_std():
+    data_config = config.DataConfig()
+    train_dataloader = DataLoader(
+        datasets.MNIST(
+            root=data_config.data_path,
+            train=True,
+            download=True,
+            transform=ToTensor(),
+        ),
+        batch_size=10000,
+        drop_last=False,
+    )
 
-    def __len__(self):
-        return len(self.img_labels)
+    mean, std = 0.0, 0.0
+    for X, _ in train_dataloader:
+        mean += X.mean()
+        std += X.std()
 
-    def __getitem__(self, idx):
-        img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
-        image = decode_image(img_path)
-        label = self.img_labels.iloc[idx, 1]
-        if self.transform:
-            image = self.transform(image)
-        if self.target_transform:
-            label = self.target_transform(label)
-        return image, label
+    mean /= len(train_dataloader)
+    std /= len(train_dataloader)
+
+    return mean, std
