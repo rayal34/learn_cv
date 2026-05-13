@@ -1,4 +1,4 @@
-import config
+from learn_cv.mnist import config
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import Compose, Normalize, ToTensor

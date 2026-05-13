@@ -2,15 +2,15 @@ import argparse
 import json
 from datetime import datetime
 
-import config
-import load_data
 import torch
 import torch.nn as nn
-import train_utils
-from model import SimpleCNN
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
+
+from learn_cv.mnist import config, load_data
+from learn_cv.mnist.model import SimpleCNN
+from learn_cv.utils import train_utils
 
 
 def main(exp_name: str, use_early_stopping: bool = True):
@@ -77,6 +77,7 @@ def main(exp_name: str, use_early_stopping: bool = True):
 
 
 if __name__ == "__main__":
+    # example usage: uv run python -m main
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--exp-name", type=str, default=datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
