@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 import torch
 from torch.utils.data import DataLoader
@@ -44,6 +45,10 @@ class EarlyStoppingWithCheckpoint:
                 self.early_stop = True
 
 
+def compute_accuracy(scores, labels):
+    return (scores.argmax(1) == labels).type(torch.float).sum().item()
+
+
 def train_loop(
     dataloader: DataLoader,
     model,
@@ -53,7 +58,8 @@ def train_loop(
 ):
     model.to(device)
     model.train()
-    total_loss = 0
+    total_loss, correct = 0, 0
+    n_samples = len(dataloader.dataset)
     for X, y in dataloader:
         X, y = X.to(device), y.to(device)
         pred = model(X)
@@ -63,25 +69,27 @@ def train_loop(
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
+        correct += compute_accuracy(pred, y)
 
-    return total_loss / len(dataloader)
+    total_loss /= n_samples
+    accuracy = correct / n_samples
+    return total_loss, accuracy
 
 
-def test_loop(dataloader: DataLoader, model, loss_fn, device: torch.device):
+def eval_loop(dataloader: DataLoader, model, loss_fn, device: torch.device):
     model.to(device)
     model.eval()
-    size = len(dataloader.dataset)
-    num_batches = len(dataloader)
+    n_samples = len(dataloader.dataset)
     test_loss, correct = 0, 0
     with torch.no_grad():
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
             pred = model(X)
             test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+            correct += compute_accuracy(pred, y)
 
-    test_loss /= num_batches
-    accuracy = correct / size
+    test_loss /= n_samples
+    accuracy = correct / n_samples
     return test_loss, accuracy
 
 
@@ -94,11 +102,13 @@ def train_one_epoch(
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
 ):
-    train_loss = train_loop(train_dataloader, model, loss_fn, optimizer, device)
-    test_loss, accuracy = test_loop(test_dataloader, model, loss_fn, device)
+    train_loss, train_acc = train_loop(
+        train_dataloader, model, loss_fn, optimizer, device
+    )
+    test_loss, test_acc = eval_loop(test_dataloader, model, loss_fn, device)
     if scheduler:
         scheduler.step(test_loss)
-    return train_loss, test_loss, accuracy
+    return train_loss, train_acc, test_loss, test_acc
 
 
 def train_many_epochs(
@@ -115,7 +125,7 @@ def train_many_epochs(
 ):
 
     for epoch in range(epochs):
-        train_loss, test_loss, accuracy = train_one_epoch(
+        train_loss, train_acc, test_loss, test_acc = train_one_epoch(
             train_dataloader,
             test_dataloader,
             model,
@@ -128,16 +138,18 @@ def train_many_epochs(
         print(
             f"Epoch {epoch + 1}/{epochs}  "
             f"train_loss: {train_loss:.4f}  "
+            f"train_acc: {train_acc:.4f}  "
             f"test_loss: {test_loss:.4f}  "
-            f"accuracy: {accuracy:.4f}"
+            f"test_acc: {test_acc:.4f}"
         )
         if writer:
             writer.add_scalar("Loss/train", train_loss, epoch)
             writer.add_scalar("Loss/test", test_loss, epoch)
-            writer.add_scalar("Accuracy", accuracy, epoch)
+            writer.add_scalar("Accuracy/train", train_acc, epoch)
+            writer.add_scalar("Accuracy/test", test_acc, epoch)
 
         if early_stopping:
-            early_stopping(accuracy, model)
+            early_stopping(test_acc, model)
             if early_stopping.early_stop:
                 print(f"Early stopping at epoch {epoch + 1}")
                 return model
@@ -148,3 +160,7 @@ def train_many_epochs(
 def save_model(model: torch.nn.Module, path: str, filename: str) -> None:
     os.makedirs(path, exist_ok=True)
     torch.save(model.state_dict(), os.path.join(path, filename))
+
+
+def generate_default_exp_name() -> str:
+    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

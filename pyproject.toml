@@ -19,8 +19,8 @@ dependencies = [
     "torchvision>=0.26.0",
 ]
 
-[tool.setuptools]
-py-modules = ["train_utils"]
+[tool.setuptools.packages.find]
+include = ["utils*", "fashion_mnist*"]
 
 [dependency-groups]
 dev = [

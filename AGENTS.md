@@ -10,11 +10,12 @@
 - `uv pip install -e .` — (re-)install project in editable mode after clone
 - `uv add <package>` — add dependency
 - `uv run python -c "..."` — run inline snippet
-- `uv run mnist/main.py --exp-name <name>` — train an experiment
+- `uv run python -m fashion_mnist.main --exp-name <name>` — train a Fashion-MNIST experiment (uses fully qualified `fashion_mnist.*` imports, works with both `-m` and direct script invocation)
+- `uv run mnist/main.py --exp-name <name>` — train an MNIST experiment
 
 ## Structure
 - `mnist/` — single module (not a package; no `__init__.py`), uses bare `import config` etc.
-- `train_utils.py` — shared training loop at repo root (imported by `mnist/main.py` via editable install)
+- `utils/` — package with shared utilities (`train_utils.py`, imported by `mnist/main.py` via editable install)
 
 ## Quirks
 - `config.py:DatasetConfig.dir` defaults to external path `/Volumes/satechi/mnist` — will fail on machines without this mount
