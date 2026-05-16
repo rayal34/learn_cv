@@ -3,13 +3,11 @@ from dataclasses import asdict, dataclass, field
 
 @dataclass
 class DataConfig:
-    data_path: str = "/Volumes/satechi/mnist"
-    train_file: str = "mnist-train.arrow"
-    test_file: str = "mnist-test.arrow"
+    data_path: str = "/Volumes/satechi/ml_projects/mnist"
 
-    model_path: str = "/Volumes/satechi/mnist/models/"
+    model_path: str = "/Volumes/satechi/ml_projects/mnist/models/"
 
-    experiment_path: str = "/Volumes/satechi/mnist/experiments/"
+    experiment_path: str = "/Volumes/satechi/ml_projects/mnist/experiments/"
 
 
 @dataclass

@@ -1,15 +1,14 @@
 import argparse
 import json
-from datetime import datetime
 
-import config
-import load_data
 import torch
 import torch.nn as nn
-from model import SimpleCNN
+from fashion_mnist import config, load_data
+from fashion_mnist.model import SimpleCNN
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
+from torchvision.transforms import v2
 from utils import train_utils
 
 
@@ -22,8 +21,29 @@ def main(exp_name: str, use_early_stopping: bool = True):
 
     torch.manual_seed(exp_config.seed)
 
-    train_data = load_data.load_training_data(data_config.data_path)
-    test_data = load_data.load_test_data(data_config.data_path)
+    train_data = load_data.load_dataset(
+        data_config,
+        train=True,
+        transforms=v2.Compose(
+            [
+                v2.RandomHorizontalFlip(train_config.h_flip_prob),
+                v2.RandomRotation(degrees=train_config.rotate_range),
+                v2.RandomCrop(28, padding=2),
+                load_data.ZeroOneScale(),
+                v2.Normalize(mean=[train_config.mean], std=[train_config.std]),
+            ]
+        ),
+    )
+    test_data = load_data.load_dataset(
+        data_config,
+        train=False,
+        transforms=v2.Compose(
+            [
+                load_data.ZeroOneScale(),
+                v2.Normalize(mean=[train_config.mean], std=[train_config.std]),
+            ]
+        ),
+    )
 
     train_dataloader = DataLoader(
         train_data, batch_size=train_config.batch_size, shuffle=True
@@ -33,10 +53,20 @@ def main(exp_name: str, use_early_stopping: bool = True):
     )
 
     model = SimpleCNN(exp_config.model)
-    torch.compile(model, backend="aot_eager")
-    print(summary(model, (1, 28, 28)))
+    print(
+        summary(
+            model,
+            (
+                train_config.input_channels,
+                train_config.input_height,
+                train_config.input_width,
+            ),
+        )
+    )
     optimizer = torch.optim.Adam(
-        model.parameters(), lr=train_config.learning_rate, weight_decay=1e-4
+        model.parameters(),
+        lr=train_config.learning_rate,
+        weight_decay=train_config.weight_decay,
     )
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
@@ -44,9 +74,14 @@ def main(exp_name: str, use_early_stopping: bool = True):
         patience=train_config.scheduler_patience,
         factor=train_config.scheduler_factor,
     )
-    loss_fn = nn.CrossEntropyLoss()
+    loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     print(f"Using device: {device}")
 
     if use_early_stopping:
@@ -82,7 +117,7 @@ def main(exp_name: str, use_early_stopping: bool = True):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--exp-name", type=str, default=datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        "--exp-name", type=str, default=train_utils.generate_default_exp_name()
     )
     parser.add_argument(
         "--early_stopping",
