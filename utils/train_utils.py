@@ -170,12 +170,6 @@ def generate_default_exp_name() -> str:
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
-def print_model_summary(
-    model: torch.nn.Module, device: torch.device, input_shape: tuple[int, int, int]
-):
-    if device == torch.device("cuda"):
-        device_name = "cuda"
-    else:
-        device_name = "cpu"
+def print_model_summary(model: torch.nn.Module, input_shape: tuple[int, int, int]):
 
-    summary(model, input_shape, device=device_name)
+    summary(model, input_shape, device="cpu")

@@ -70,7 +70,6 @@ def main(exp_name: str, use_early_stopping: bool = True, data_root: str | None =
 
     train_utils.print_model_summary(
         model,
-        device,
         (
             train_config.input_channels,
             train_config.input_height,
