@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 
 import torch
+from fashion_mnist.utils import general_utils
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
@@ -94,6 +95,7 @@ def eval_loop(dataloader: DataLoader, model, loss_fn, device: torch.device):
     return test_loss, accuracy
 
 
+@general_utils.timer
 def train_one_epoch(
     train_dataloader: DataLoader,
     test_dataloader: DataLoader,
