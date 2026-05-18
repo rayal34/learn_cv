@@ -12,12 +12,18 @@ from torchvision.transforms import v2
 from utils import train_utils
 
 
-def main(exp_name: str, use_early_stopping: bool = True):
-    exp_config = config.ExperimentConfig(name=exp_name)
+def main(exp_name: str, use_early_stopping: bool = True, data_root: str | None = None):
+
+    if data_root is None:
+        dataset_config = config.DataConfig()
+    else:
+        dataset_config = config.DataConfig(root=data_root)
+
+    exp_config = config.ExperimentConfig(name=exp_name, dataset=dataset_config)
     train_config = exp_config.training
     data_config = exp_config.dataset
 
-    writer = SummaryWriter(f"{data_config.experiment_path}/{exp_name}")
+    writer = SummaryWriter(f"{data_config.experiment_folder}/{exp_name}")
 
     torch.manual_seed(exp_config.seed)
 
@@ -126,6 +132,12 @@ if __name__ == "__main__":
         default=True,
     )
 
+    parser.add_argument(
+        "--data-root",
+        type=str,
+        default=None,
+    )
+
     args = parser.parse_args()
 
-    main(args.exp_name, args.early_stopping)
+    main(args.exp_name, args.early_stopping, data_root=args.data_root)
