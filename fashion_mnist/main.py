@@ -7,7 +7,6 @@ from fashion_mnist import config, load_data
 from fashion_mnist.model import SimpleCNN
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from torchsummary import summary
 from torchvision.transforms import v2
 from utils import train_utils
 
@@ -58,16 +57,23 @@ def main(exp_name: str, use_early_stopping: bool = True, data_root: str | None =
         test_data, batch_size=train_config.batch_size, shuffle=False
     )
 
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+    print(f"Using device: {device}")
+
     model = SimpleCNN(exp_config.model)
-    print(
-        summary(
-            model,
-            (
-                train_config.input_channels,
-                train_config.input_height,
-                train_config.input_width,
-            ),
-        )
+    train_utils.print_model_summary(
+        model,
+        device,
+        (
+            train_config.input_channels,
+            train_config.input_height,
+            train_config.input_width,
+        ),
     )
     optimizer = torch.optim.Adam(
         model.parameters(),
@@ -81,14 +87,6 @@ def main(exp_name: str, use_early_stopping: bool = True, data_root: str | None =
         factor=train_config.scheduler_factor,
     )
     loss_fn = nn.CrossEntropyLoss(reduction="sum")
-
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-    elif torch.backends.mps.is_available():
-        device = torch.device("mps")
-    else:
-        device = torch.device("cpu")
-    print(f"Using device: {device}")
 
     if use_early_stopping:
         early_stopping = train_utils.EarlyStoppingWithCheckpoint(

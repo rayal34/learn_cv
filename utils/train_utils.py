@@ -4,6 +4,7 @@ from datetime import datetime
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from torchsummary import summary
 
 
 class EarlyStoppingWithCheckpoint:
@@ -164,3 +165,10 @@ def save_model(model: torch.nn.Module, path: str, filename: str) -> None:
 
 def generate_default_exp_name() -> str:
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+
+def print_model_summary(
+    model: torch.nn.Module, device: torch.device, input_shape: tuple[int, int, int]
+):
+    model.to(device)
+    print(summary(model, input_shape))
