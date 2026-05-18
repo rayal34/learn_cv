@@ -1,3 +1,4 @@
+import os
 from dataclasses import asdict, dataclass, field
 
 from utils import train_utils
@@ -5,15 +6,20 @@ from utils import train_utils
 
 @dataclass
 class DataConfig:
-    data_path: str = "/Volumes/satechi/ml_projects/FashionMNIST/data"
+    root: str = "/Volumes/satechi/ml_projects/FashionMNIST"
+    data_path: str = field(init=False)
+    model_path: str = field(init=False)
+    experiment_path: str = field(init=False)
+
     train_images_filename: str = "train-images-idx3-ubyte.gz"
     train_labels_filename: str = "train-labels-idx1-ubyte.gz"
     test_images_filename: str = "t10k-images-idx3-ubyte.gz"
     test_labels_filename: str = "t10k-labels-idx1-ubyte.gz"
 
-    model_path: str = "/Volumes/satechi/ml_projects/FashionMNIST/models/"
-
-    experiment_path: str = "/Volumes/satechi/ml_projects/FashionMNIST/experiments/"
+    def __post_init__(self):
+        self.data_path = os.path.join(self.root, "data")
+        self.model_path = os.path.join(self.root, "models")
+        self.experiment_path = os.path.join(self.root, "experiments")
 
 
 @dataclass
