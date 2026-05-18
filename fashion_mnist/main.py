@@ -23,7 +23,7 @@ def main(exp_name: str, use_early_stopping: bool = True, data_root: str | None =
     train_config = exp_config.training
     data_config = exp_config.dataset
 
-    writer = SummaryWriter(f"{data_config.experiment_folder}/{exp_name}")
+    writer = SummaryWriter(f"{data_config.experiment_path}/{exp_name}")
 
     torch.manual_seed(exp_config.seed)
 
