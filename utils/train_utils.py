@@ -173,5 +173,9 @@ def generate_default_exp_name() -> str:
 def print_model_summary(
     model: torch.nn.Module, device: torch.device, input_shape: tuple[int, int, int]
 ):
-    model.to(device)
-    print(summary(model, input_shape))
+    if device == torch.device("cuda"):
+        device_name = "cuda"
+    else:
+        device_name = "cpu"
+
+    print(summary(model, input_shape, device=device_name))
