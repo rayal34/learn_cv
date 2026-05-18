@@ -60,13 +60,12 @@ def main(exp_name: str, use_early_stopping: bool = True, data_root: str | None =
     model = SimpleCNN(exp_config.model)
     if torch.cuda.is_available():
         device = torch.device("cuda")
-        compile_backend = "inductor"
+        torch.compile(model)
     elif torch.backends.mps.is_available():
         device = torch.device("mps")
-        compile_backend = "aot_eager"
+        torch.compile(model, backend="aot_eager")
     else:
         device = torch.device("cpu")
-        compile_backend = None
     print(f"Using device: {device}")
 
     train_utils.print_model_summary(
@@ -78,7 +77,6 @@ def main(exp_name: str, use_early_stopping: bool = True, data_root: str | None =
             train_config.input_width,
         ),
     )
-    torch.compile(model, backend=compile_backend)
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=train_config.learning_rate,
