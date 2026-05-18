@@ -2,10 +2,11 @@ import os
 from datetime import datetime
 
 import torch
-from fashion_mnist.utils import general_utils
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
+
+from utils import general_utils
 
 
 class EarlyStoppingWithCheckpoint:
