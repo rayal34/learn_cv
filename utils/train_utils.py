@@ -178,4 +178,4 @@ def print_model_summary(
     else:
         device_name = "cpu"
 
-    print(summary(model, input_shape, device=device_name))
+    summary(model, input_shape, device=device_name)
