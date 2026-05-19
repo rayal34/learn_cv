@@ -32,17 +32,14 @@ class TrainingConfig:
     num_epochs: int = 100
 
     weight_decay: float = 0.001
+    early_stopping: bool = True
 
-    input_height = 28
-    input_width = 28
-    input_channels = 1
 
-    h_flip_prob = 0.5
-    v_flip_prob = 0.0
-    rotate_range = [-5.0, 5.0]
-
-    mean: float = 0.286
-    std: float = 0.353
+@dataclass
+class DataAugmentationConfig:
+    h_flip_prob: float = 0.5
+    rotate_range: list[float] = field(default_factory=lambda: [-5.0, 5.0])
+    crop_padding: int = 2
 
 
 @dataclass
@@ -56,16 +53,12 @@ class ConvSpec:
 
 @dataclass
 class ModelConfig:
-    num_classes: int = 10
     conv_layers: list[ConvSpec] = field(
         default_factory=lambda: [
-            ConvSpec(64, 3, pool=None),
-            ConvSpec(128, 3, pool=2),
-            ConvSpec(256, 3, pool=2),
-            ConvSpec(512, 3, pool=2),
+            ConvSpec(64, 3, pool=2),
         ]
     )
-    fc_hidden: tuple[int, ...] = (256, 128, 64)
+    fc_hidden: tuple[int, ...] = (64,)
     dropout: float | None = 0.3
 
 
@@ -74,6 +67,9 @@ class ExperimentConfig:
     name: str = field(default_factory=lambda: train_utils.generate_default_exp_name())
     seed: int = 42
     dataset: DataConfig = field(default_factory=DataConfig)
+    data_augmentations: DataAugmentationConfig = field(
+        default_factory=DataAugmentationConfig
+    )
     training: TrainingConfig = field(default_factory=TrainingConfig)
     model: ModelConfig = field(default_factory=ModelConfig)
 
@@ -83,5 +79,6 @@ class ExperimentConfig:
             "seed": self.seed,
             "dataset": asdict(self.dataset),
             "training": asdict(self.training),
+            "data_augmentations": asdict(self.data_augmentations),
             "model": asdict(self.model),
         }

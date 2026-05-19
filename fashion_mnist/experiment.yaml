@@ -1,0 +1,49 @@
+seed: 42
+
+dataset:
+  root: "/Volumes/satechi/ml_projects/FashionMNIST"
+  train_images_filename: "train-images-idx3-ubyte.gz"
+  train_labels_filename: "train-labels-idx1-ubyte.gz"
+  test_images_filename: "t10k-images-idx3-ubyte.gz"
+  test_labels_filename: "t10k-labels-idx1-ubyte.gz"
+
+data_augmentations:
+  h_flip_prob: 0.5
+  rotate_range: [-5.0, 5.0]
+  crop_padding: 2
+
+training:
+  learning_rate: 0.002
+  batch_size: 256
+  early_stopping_patience: 20
+  scheduler_patience: 5
+  scheduler_factor: 0.5
+  num_epochs: 100
+  weight_decay: 0.001
+
+  early_stopping: true
+
+model:
+  dropout: 0.3
+  fc_hidden: [256, 128, 64]
+  conv_layers:
+    - out_channels: 64
+      kernel_size: 3
+      padding: 0
+      pool: null
+      stride: 1
+    - out_channels: 128
+      kernel_size: 3
+      padding: 0
+      pool: 2
+      stride: 1
+    - out_channels: 256
+      kernel_size: 3
+      padding: 0
+      pool: 2
+      stride: 1
+    - out_channels: 512
+      kernel_size: 3
+      padding: 0
+      pool: 2
+      stride: 1

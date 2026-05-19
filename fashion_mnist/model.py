@@ -1,18 +1,24 @@
 import torch.nn as nn
 import torch.nn.functional as F
-from fashion_mnist import config
+
+from fashion_mnist import config, constants
 
 
 class SimpleCNN(nn.Module):
-    def __init__(self, model_config: config.ModelConfig | None = None):
+    def __init__(
+        self,
+        input_channels: int,
+        input_size: int,
+        model_config: config.ModelConfig | None = None,
+    ):
         super().__init__()
         if model_config is None:
             model_config = config.ModelConfig()
         self.config = model_config
 
         # Convolution layers
-        c_in = config.TrainingConfig.input_channels
-        size = config.TrainingConfig.input_height
+        c_in = input_channels
+        size = input_size
         self.conv_blocks = nn.ModuleList()
         for spec in model_config.conv_layers:
             layers: list[nn.Module] = [
@@ -34,7 +40,7 @@ class SimpleCNN(nn.Module):
 
         # Fully connected layers
         in_features = c_in * size * size
-        fc_sizes = [in_features, *model_config.fc_hidden, model_config.num_classes]
+        fc_sizes = [in_features, *model_config.fc_hidden, constants.NUM_CLASSES]
         self.fcs = nn.ModuleList(
             nn.Linear(fc_sizes[i], fc_sizes[i + 1]) for i in range(len(fc_sizes) - 1)
         )
@@ -48,7 +54,7 @@ class SimpleCNN(nn.Module):
         for block in self.conv_blocks:
             x = block(x)
         x = self.flatten(x)
-        for fc in self.fcs[:-1]:
+        for fc in self.fcs[:-1]:  # ty: ignore
             x = F.relu(fc(x))
             if self.dropout is not None:
                 x = self.dropout(x)

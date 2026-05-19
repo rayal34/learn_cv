@@ -1,6 +1,8 @@
 import os
+import random
 from datetime import datetime
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -62,7 +64,7 @@ def train_loop(
     model.to(device)
     model.train()
     total_loss, correct = 0, 0
-    n_samples = len(dataloader.dataset)
+    n_samples = len(dataloader.dataset)  # type: ignore
     for X, y in dataloader:
         X, y = X.to(device), y.to(device)
         pred = model(X)
@@ -82,7 +84,7 @@ def train_loop(
 def eval_loop(dataloader: DataLoader, model, loss_fn, device: torch.device):
     model.to(device)
     model.eval()
-    n_samples = len(dataloader.dataset)
+    n_samples = len(dataloader.dataset)  # type: ignore
     test_loss, correct = 0, 0
     with torch.no_grad():
         for X, y in dataloader:
@@ -173,3 +175,40 @@ def generate_default_exp_name() -> str:
 def print_model_summary(model: torch.nn.Module, input_shape: tuple[int, int, int]):
 
     summary(model, input_shape, device="cpu")
+
+
+def seed_everything(seed: int):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+    elif torch.backends.mps.is_available():
+        torch.mps.manual_seed(seed)
+
+
+def get_optimizer_and_scheduler(
+    model: torch.nn.Module,
+    learning_rate: float,
+    weight_decay: float,
+    scheduler_patience: int,
+    scheduler_factor: float,
+):
+    """
+    Factory function to initialize the optimizer and scheduler.
+    Abstracting this keeps main.py clean and allows for easy swapping
+    of optimizers based on configuration parameters in the future.
+    """
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=learning_rate,
+        weight_decay=weight_decay,
+    )
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode="min",
+        patience=scheduler_patience,
+        factor=scheduler_factor,
+    )
+    return optimizer, scheduler
