@@ -1,40 +1,46 @@
 import argparse
 import json
-from datetime import datetime
+import os
+from typing import cast
 
-import config
-import load_data
 import torch
 import torch.nn as nn
-from model import SimpleCNN
-from torch.utils.data import DataLoader
+from base.model import SimpleCNN
+from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
-from torchsummary import summary
 from utils import train_utils
 
+from mnist import config, constants, load_data
 
-def main(exp_name: str, use_early_stopping: bool = True):
-    exp_config = config.ExperimentConfig(name=exp_name)
+
+def main(config_path: str):
+    base_config = OmegaConf.structured(config.ExperimentConfig)
+
+    yaml_config = OmegaConf.load(config_path)
+    exp_config = cast(
+        config.ExperimentConfig, OmegaConf.merge(base_config, yaml_config)
+    )
+
     train_config = exp_config.training
     data_config = exp_config.dataset
 
-    writer = SummaryWriter(f"{data_config.experiment_path}/{exp_name}")
+    train_utils.seed_everything(exp_config.seed)
+    writer = SummaryWriter(f"{data_config.experiment_path}/{exp_config.name}")
 
-    torch.manual_seed(exp_config.seed)
+    train_dataloader, test_dataloader = load_data.get_dataloaders(exp_config)
 
-    train_data = load_data.load_training_data(data_config.data_path)
-    test_data = load_data.load_test_data(data_config.data_path)
-
-    train_dataloader = DataLoader(
-        train_data, batch_size=train_config.batch_size, shuffle=True
+    model = SimpleCNN(
+        constants.INPUT_CHANNELS, constants.INPUT_HEIGHT, exp_config.model
     )
-    test_dataloader = DataLoader(
-        test_data, batch_size=train_config.batch_size, shuffle=False
-    )
-
-    model = SimpleCNN(exp_config.model)
     torch.compile(model, backend="aot_eager")
-    print(summary(model, (1, 28, 28)))
+    train_utils.print_model_summary(
+        model,
+        (
+            constants.INPUT_CHANNELS,
+            constants.INPUT_HEIGHT,
+            constants.INPUT_WIDTH,
+        ),
+    )
     optimizer = torch.optim.Adam(
         model.parameters(), lr=train_config.learning_rate, weight_decay=1e-4
     )
@@ -49,10 +55,10 @@ def main(exp_name: str, use_early_stopping: bool = True):
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    if use_early_stopping:
+    if train_config.early_stopping:
         early_stopping = train_utils.EarlyStoppingWithCheckpoint(
             model_path=data_config.model_path,
-            model_name=exp_name,
+            model_name=exp_config.name,
             patience=train_config.early_stopping_patience,
         )
     else:
@@ -75,22 +81,19 @@ def main(exp_name: str, use_early_stopping: bool = True):
     writer.add_text("Config", json.dumps(exp_config.to_dict()))
     writer.close()
 
-    if not use_early_stopping:
-        train_utils.save_model(model, data_config.model_path, f"{exp_name}.pt")
+    if not train_config.early_stopping:
+        train_utils.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--exp-name", type=str, default=datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    )
-    parser.add_argument(
-        "--early_stopping",
-        type=bool,
-        action=argparse.BooleanOptionalAction,
-        default=True,
+        "--config",
+        type=str,
+        default=os.path.join(os.path.dirname(__file__), "experiment.yaml"),
+        help="Path to the YAML configuration file.",
     )
 
     args = parser.parse_args()
 
-    main(args.exp_name, args.early_stopping)
+    main(config_path=args.config)

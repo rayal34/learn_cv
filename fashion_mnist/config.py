@@ -1,6 +1,6 @@
 from dataclasses import asdict, dataclass, field
 
-from base.config import ConvSpec, DataConfig, TrainingConfig
+from base.config import DataConfig, SimpleCNNModelConfig, TrainingConfig
 from omegaconf import MISSING
 from utils import train_utils
 
@@ -13,13 +13,6 @@ class DataAugmentationConfig:
 
 
 @dataclass
-class ModelConfig:
-    conv_layers: list[ConvSpec] = MISSING
-    fc_hidden: tuple[int, ...] = MISSING
-    dropout: float | None = MISSING
-
-
-@dataclass
 class ExperimentConfig:
     name: str = field(default_factory=lambda: train_utils.generate_default_exp_name())
     seed: int = 42
@@ -28,7 +21,7 @@ class ExperimentConfig:
         default_factory=DataAugmentationConfig
     )
     training: TrainingConfig = MISSING
-    model: ModelConfig = field(default_factory=ModelConfig)
+    model: SimpleCNNModelConfig = field(default_factory=SimpleCNNModelConfig)
 
     def to_dict(self) -> dict:
         return {

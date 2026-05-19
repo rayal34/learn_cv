@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["utils*", "fashion_mnist*"]
+include = ["base*", "utils*", "fashion_mnist*", "mnist*"]
 
 [dependency-groups]
 dev = [

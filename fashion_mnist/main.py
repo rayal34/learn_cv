@@ -5,35 +5,28 @@ from typing import cast
 
 import torch
 import torch.nn as nn
+from base.model import SimpleCNN
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 from utils import train_utils
 
 from fashion_mnist import config, constants, load_data
-from fashion_mnist.model import SimpleCNN
 
 
-def main(
-    exp_name: str | None = None,
-    config_path: str | None = None,
-):
-    exp_name = exp_name or train_utils.generate_default_exp_name()
+def main(config_path: str):
     base_config = OmegaConf.structured(config.ExperimentConfig)
 
-    if config_path is not None:
-        yaml_config = OmegaConf.load(config_path)
-        exp_config = cast(
-            config.ExperimentConfig, OmegaConf.merge(base_config, yaml_config)
-        )
-    else:
-        exp_config = cast(config.ExperimentConfig, base_config)
+    yaml_config = OmegaConf.load(config_path)
+    exp_config = cast(
+        config.ExperimentConfig, OmegaConf.merge(base_config, yaml_config)
+    )
 
     train_config = exp_config.training
     data_config = exp_config.dataset
 
     train_utils.seed_everything(exp_config.seed)
 
-    writer = SummaryWriter(f"{data_config.experiment_path}/{exp_name}")
+    writer = SummaryWriter(f"{data_config.experiment_path}/{exp_config.name}")
 
     train_dataloader, test_dataloader = load_data.get_dataloaders(exp_config)
 
@@ -100,12 +93,6 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--exp-name",
-        type=str,
-        default=None,
-        help="Optional experiment name. Defaults to timestamp.",
-    )
 
     parser.add_argument(
         "--config",
@@ -117,6 +104,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(
-        exp_name=args.exp_name,
         config_path=args.config,
     )

@@ -1,49 +1,44 @@
-import config
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import Compose, Normalize, ToTensor
 
+from mnist import config, constants
+
 
 def load_training_data(root):
 
-    mean, std = get_normalize_mean_std()
     return datasets.MNIST(
         root=root,
         train=True,
         download=True,
-        transform=Compose([ToTensor(), Normalize(mean=mean, std=std)]),
+        transform=Compose(
+            [ToTensor(), Normalize(mean=constants.MEAN, std=constants.STD)]
+        ),
     )
 
 
 def load_test_data(root):
-    mean, std = get_normalize_mean_std()
     return datasets.MNIST(
         root=root,
         train=False,
         download=True,
-        transform=Compose([ToTensor(), Normalize(mean=mean, std=std)]),
-    )
-
-
-def get_normalize_mean_std():
-    data_config = config.DataConfig()
-    train_dataloader = DataLoader(
-        datasets.MNIST(
-            root=data_config.data_path,
-            train=True,
-            download=True,
-            transform=ToTensor(),
+        transform=Compose(
+            [ToTensor(), Normalize(mean=constants.MEAN, std=constants.STD)]
         ),
-        batch_size=10000,
-        drop_last=False,
     )
 
-    mean, std = 0.0, 0.0
-    for X, _ in train_dataloader:
-        mean += X.mean()
-        std += X.std()
 
-    mean /= len(train_dataloader)
-    std /= len(train_dataloader)
+def get_dataloaders(config: config.ExperimentConfig):
+    train_data = load_training_data(config.dataset.root)
+    test_data = load_test_data(config.dataset.root)
 
-    return mean, std
+    train_dataloader = DataLoader(
+        train_data,
+        batch_size=config.training.batch_size,
+        shuffle=True,
+    )
+    test_dataloader = DataLoader(
+        test_data, batch_size=config.training.batch_size, shuffle=False
+    )
+
+    return train_dataloader, test_dataloader

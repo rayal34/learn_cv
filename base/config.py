@@ -1,6 +1,8 @@
 import os
 from dataclasses import dataclass, field
 
+from omegaconf import MISSING
+
 
 @dataclass
 class DataConfig:
@@ -11,9 +13,9 @@ class DataConfig:
     test_images_filename: str
     test_labels_filename: str
 
-    data_path: str = field(init=False)
-    model_path: str = field(init=False)
-    experiment_path: str = field(init=False)
+    data_path: str = field(init=False, default="${.root}/data")
+    model_path: str = field(init=False, default="${.root}/models")
+    experiment_path: str = field(init=False, default="${.root}/experiments")
 
     def __post_init__(self):
         self.data_path = os.path.join(self.root, "data")
@@ -41,3 +43,11 @@ class ConvSpec:
     padding: int
     pool: int | None
     stride: int
+
+
+@dataclass
+class SimpleCNNModelConfig:
+    conv_layers: list[ConvSpec] = MISSING
+    fc_hidden: list[int] = MISSING
+    dropout: float | None = MISSING
+
