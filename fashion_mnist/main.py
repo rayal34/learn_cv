@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 from typing import cast
 
 import torch
@@ -109,7 +110,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config",
         type=str,
-        default=None,
+        default=os.path.join(os.path.dirname(__file__), "experiment.yaml"),
         help="Path to the YAML configuration file.",
     )
 
