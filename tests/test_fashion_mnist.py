@@ -8,13 +8,13 @@ from base.config import DataConfig, TrainingConfig
 from fashion_mnist.config import DataAugmentationConfig, ExperimentConfig
 from fashion_mnist.load_data import (
     FashionMNISTDataset,
-    ZeroOneScale,
     get_dataloaders,
     load_dataset,
     load_images,
     load_labels,
 )
 from fashion_mnist.main import main
+from utils.augmentation_utils import ZeroOneScale
 
 # ==========================================
 # Tests for fashion_mnist/config.py

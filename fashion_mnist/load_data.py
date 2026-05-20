@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import v2
+from utils.augmentation_utils import ZeroOneScale
 
 from fashion_mnist import config, constants
 
@@ -28,17 +29,6 @@ class FashionMNISTDataset(Dataset):
 
         label = torch.tensor(label, dtype=torch.long)
         return image, label
-
-
-class ZeroOneScale:
-    def __init__(
-        self, min_val: float = 0.0, max_val: float = constants.MAX_PIXEL_VALUE
-    ):
-        self.min_val = min_val
-        self.max_val = max_val
-
-    def __call__(self, img):
-        return (img - self.min_val) / (self.max_val - self.min_val)
 
 
 def load_images(filename: str):
@@ -79,7 +69,9 @@ def get_dataloaders(config: config.ExperimentConfig):
                     constants.INPUT_HEIGHT,
                     padding=config.data_augmentations.crop_padding,
                 ),
-                ZeroOneScale(),
+                ZeroOneScale(
+                    min_val=constants.MIN_PIXEL_VALUE, max_val=constants.MAX_PIXEL_VALUE
+                ),
                 v2.Normalize(mean=[constants.MEAN], std=[constants.STD]),
             ]
         ),
@@ -90,7 +82,9 @@ def get_dataloaders(config: config.ExperimentConfig):
         train=False,
         transforms=v2.Compose(
             [
-                ZeroOneScale(),
+                ZeroOneScale(
+                    min_val=constants.MIN_PIXEL_VALUE, max_val=constants.MAX_PIXEL_VALUE
+                ),
                 v2.Normalize(mean=[constants.MEAN], std=[constants.STD]),
             ]
         ),
