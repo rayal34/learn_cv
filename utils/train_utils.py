@@ -197,8 +197,6 @@ def get_optimizer_and_scheduler(
 ):
     """
     Factory function to initialize the optimizer and scheduler.
-    Abstracting this keeps main.py clean and allows for easy swapping
-    of optimizers based on configuration parameters in the future.
     """
     optimizer = torch.optim.Adam(
         model.parameters(),
