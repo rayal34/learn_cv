@@ -5,6 +5,7 @@ import yaml
 from base.config import DataConfig, ExperimentConfig, TrainingConfig
 from mnist.load_data import get_dataloaders, load_test_data, load_training_data
 from mnist.main import main
+from models.config import SimpleCNNModelConfig
 
 # ==========================================
 # Tests for mnist/config.py
@@ -31,7 +32,11 @@ def test_mnist_experiment_config_to_dict():
     )
 
     exp_cfg = ExperimentConfig(
-        name="test_mnist_exp", seed=42, dataset=dataset_cfg, training=training_cfg
+        name="test_mnist_exp",
+        seed=42,
+        dataset=dataset_cfg,
+        training=training_cfg,
+        model=SimpleCNNModelConfig(),
     )
 
     d = exp_cfg.to_dict()
