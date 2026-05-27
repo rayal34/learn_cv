@@ -4,8 +4,12 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import torch
 import yaml
-from base.config import DataConfig, TrainingConfig
-from fashion_mnist.config import DataAugmentationConfig, ExperimentConfig
+from base.config import (
+    DataAugmentationConfig,
+    DataConfig,
+    ExperimentConfig,
+    TrainingConfig,
+)
 from fashion_mnist.load_data import (
     FashionMNISTDataset,
     get_dataloaders,
@@ -14,6 +18,7 @@ from fashion_mnist.load_data import (
     load_labels,
 )
 from fashion_mnist.main import main
+from models.config import SimpleCNNModelConfig
 from utils.augmentation_utils import ZeroOneScale
 
 # ==========================================
@@ -48,7 +53,11 @@ def test_experiment_config_to_dict():
     )
 
     exp_cfg = ExperimentConfig(
-        name="test_experiment", seed=123, dataset=dataset_cfg, training=training_cfg
+        name="test_experiment",
+        seed=123,
+        dataset=dataset_cfg,
+        training=training_cfg,
+        model=SimpleCNNModelConfig(),
     )
 
     d = exp_cfg.to_dict()

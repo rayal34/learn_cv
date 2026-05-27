@@ -1,17 +1,19 @@
 import os
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+from typing import Any
 
 from omegaconf import MISSING
+from utils import train_utils
 
 
 @dataclass
 class DataConfig:
     root: str
 
-    train_images_filename: str
-    train_labels_filename: str
-    test_images_filename: str
-    test_labels_filename: str
+    train_images_filename: str | None = None
+    train_labels_filename: str | None = None
+    test_images_filename: str | None = None
+    test_labels_filename: str | None = None
 
     data_path: str = field(init=False, default="${.root}/data")
     model_path: str = field(init=False, default="${.root}/models")
@@ -37,17 +39,32 @@ class TrainingConfig:
 
 
 @dataclass
-class ConvSpec:
-    out_channels: int
-    kernel_size: int
-    padding: int
-    pool: int | None
-    stride: int
+class DataAugmentationConfig:
+    h_flip_prob: float = 0.5
+    rotate_range: list[float] = field(default_factory=lambda: [-5.0, 5.0])
+    crop_padding: int = 2
 
 
 @dataclass
-class SimpleCNNModelConfig:
-    conv_layers: list[ConvSpec] = MISSING
-    fc_hidden: list[int] = MISSING
-    dropout: float | None = MISSING
+class ExperimentConfig:
+    name: str = field(default_factory=lambda: train_utils.generate_default_exp_name())
+    seed: int = 42
+    dry_run: bool = False
+    dataset: DataConfig = MISSING
+    data_augmentations: DataAugmentationConfig = field(
+        default_factory=DataAugmentationConfig
+    )
+    training: TrainingConfig = MISSING
+    model: Any = MISSING
 
+    def to_dict(self) -> dict:
+
+        return {
+            "name": self.name,
+            "seed": self.seed,
+            "dry_run": self.dry_run,
+            "dataset": asdict(self.dataset),
+            "training": asdict(self.training),
+            "data_augmentations": asdict(self.data_augmentations),
+            "model": asdict(self.model),
+        }

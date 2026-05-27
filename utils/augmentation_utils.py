@@ -5,3 +5,11 @@ class ZeroOneScale:
 
     def __call__(self, img):
         return (img - self.min_val) / (self.max_val - self.min_val)
+
+
+class ZeroCenter:
+    def __init__(self, mean: float):
+        self.mean = mean
+
+    def __call__(self, img):
+        return img - self.mean

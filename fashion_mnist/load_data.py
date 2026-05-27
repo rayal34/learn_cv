@@ -2,11 +2,12 @@ import gzip
 
 import numpy as np
 import torch
+from base import config
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import v2
 from utils.augmentation_utils import ZeroOneScale
 
-from fashion_mnist import config, constants
+from fashion_mnist import constants
 
 
 class FashionMNISTDataset(Dataset):

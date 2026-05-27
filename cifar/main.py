@@ -6,34 +6,41 @@ from typing import cast
 import torch
 import torch.nn as nn
 from base import config
-from models.cnn import SimpleCNN
+from models.resnet import ResNet18
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 from utils import train_utils
 
-from mnist import constants, load_data
+from cifar import constants, load_data
 
 
-def main(config_path: str):
+def main(config_path: str, dry_run: bool = False):
     base_config = OmegaConf.structured(config.ExperimentConfig)
-
     yaml_config = OmegaConf.load(config_path)
+
     exp_config = cast(
         config.ExperimentConfig, OmegaConf.merge(base_config, yaml_config)
     )
 
     train_config = exp_config.training
     data_config = exp_config.dataset
+    model_config = exp_config.model
 
     train_utils.seed_everything(exp_config.seed)
-    writer = SummaryWriter(f"{data_config.experiment_path}/{exp_config.name}")
 
     train_dataloader, test_dataloader = load_data.get_dataloaders(exp_config)
 
-    model = SimpleCNN(
-        constants.INPUT_CHANNELS, constants.INPUT_HEIGHT, exp_config.model
-    )
-    torch.compile(model, backend="aot_eager")
+    model = ResNet18(constants.INPUT_CHANNELS, constants.NUM_CLASSES, model_config)
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        torch.compile(model)
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+        torch.compile(model, backend="aot_eager")
+    else:
+        device = torch.device("cpu")
+    print(f"Using device: {device}")
+
     train_utils.print_model_summary(
         model,
         (
@@ -42,19 +49,16 @@ def main(config_path: str):
             constants.INPUT_WIDTH,
         ),
     )
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=train_config.learning_rate, weight_decay=1e-4
-    )
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        mode="min",
-        patience=train_config.scheduler_patience,
-        factor=train_config.scheduler_factor,
-    )
-    loss_fn = nn.CrossEntropyLoss()
 
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-    print(f"Using device: {device}")
+    optimizer, scheduler = train_utils.get_optimizer_and_scheduler(
+        model=model,
+        learning_rate=train_config.learning_rate,
+        weight_decay=train_config.weight_decay,
+        scheduler_patience=train_config.scheduler_patience,
+        scheduler_factor=train_config.scheduler_factor,
+    )
+
+    loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
     if train_config.early_stopping:
         early_stopping = train_utils.EarlyStoppingWithCheckpoint(
@@ -64,6 +68,14 @@ def main(config_path: str):
         )
     else:
         early_stopping = None
+
+    if dry_run:
+        writer = None
+        train_config.num_epochs = 1
+    else:
+        writer = SummaryWriter(f"{data_config.experiment_path}/{exp_config.name}")
+        writer.add_text("Architecture", str(model))
+        writer.add_text("Config", json.dumps(exp_config.to_dict()))
 
     train_utils.train_many_epochs(
         train_config.num_epochs,
@@ -78,21 +90,17 @@ def main(config_path: str):
         writer=writer,
     )
 
-    writer.add_text("Architecture", str(model))
-    writer.add_text("Config", json.dumps(exp_config.to_dict()))
-    writer.close()
-
     if not train_config.early_stopping:
         train_utils.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+
     parser.add_argument(
         "--config",
         type=str,
         default=os.path.join(os.path.dirname(__file__), "experiment.yaml"),
-        help="Path to the YAML configuration file.",
     )
 
     args = parser.parse_args()

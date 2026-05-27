@@ -1,7 +1,7 @@
-import pytest
 import torch
-from base.config import ConvSpec, DataConfig, SimpleCNNModelConfig, TrainingConfig
-from base.model import SimpleCNN
+from base.config import DataConfig, TrainingConfig
+from models.cnn import SimpleCNN
+from models.config import ConvSpec, SimpleCNNModelConfig
 
 # ==========================================
 # Tests for base/config.py
@@ -76,17 +76,6 @@ def test_simple_cnn_init_and_forward():
     dummy_input = torch.randn(n_samples, 1, input_size, input_size)
     output = model(dummy_input)
     assert output.shape == (n_samples, n_classes)
-
-
-def test_simple_cnn_default_config_handling():
-    # If no config is passed, it should instantiate config.SimpleCNNModelConfig()
-    # which has conv_layers as MISSING, so it will error on iteration, but let's see:
-    # Under normal usage model_config must be passed. Let's verify it raises KeyError or OmegaConf error
-    # if layers are missing, or we can check simple initialization.
-    with pytest.raises(Exception):
-        model = SimpleCNN(input_channels=1, input_size=28, model_config=None)
-        dummy_input = torch.randn(4, 1, 28, 28)
-        model(dummy_input)
 
 
 def test_simple_cnn_none_dropout_none_pool():

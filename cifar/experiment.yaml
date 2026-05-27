@@ -1,0 +1,55 @@
+seed: 42
+dry_run: false
+
+dataset:
+  root: "/Volumes/satechi/ml_projects/cifar/cifar-100-python"
+
+data_augmentations:
+  h_flip_prob: 0.5
+  rotate_range: [-5.0, 5.0]
+  crop_padding: 2
+
+training:
+  learning_rate: 0.002
+  batch_size: 256
+  early_stopping_patience: 20
+  scheduler_patience: 5
+  scheduler_factor: 0.5
+  num_epochs: 100
+  weight_decay: 0.001
+
+  early_stopping: true
+
+model:
+  fc_hidden: 512
+  stem:
+    conv:
+      - in_channels: 3
+        kernel_size: 3
+        padding: 1
+        stride: 1
+    maxpool:
+        - kernel_size: 3
+          stride: 2
+          padding: 1
+  layer:
+    - out_channels: 64
+      kernel_size: 3
+      padding: 1
+      stride: 1
+      blocks: 2
+    - out_channels: 128
+      kernel_size: 3
+      padding: 1
+      stride: 2
+      blocks: 2
+    - out_channels: 256
+      kernel_size: 3
+      padding: 1
+      stride: 2
+      blocks: 2
+    - out_channels: 512
+      kernel_size: 3
+      padding: 1
+      stride: 2
+      blocks: 2

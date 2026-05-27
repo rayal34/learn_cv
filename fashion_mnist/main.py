@@ -5,12 +5,13 @@ from typing import cast
 
 import torch
 import torch.nn as nn
-from base.model import SimpleCNN
+from base import config
+from models.cnn import SimpleCNN
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 from utils import train_utils
 
-from fashion_mnist import config, constants, load_data
+from fashion_mnist import constants, load_data
 
 
 def main(config_path: str):
@@ -23,6 +24,7 @@ def main(config_path: str):
 
     train_config = exp_config.training
     data_config = exp_config.dataset
+    model_config = exp_config.model
 
     train_utils.seed_everything(exp_config.seed)
 
@@ -30,9 +32,7 @@ def main(config_path: str):
 
     train_dataloader, test_dataloader = load_data.get_dataloaders(exp_config)
 
-    model = SimpleCNN(
-        constants.INPUT_CHANNELS, constants.INPUT_HEIGHT, exp_config.model
-    )
+    model = SimpleCNN(constants.INPUT_CHANNELS, constants.INPUT_HEIGHT, model_config)
     if torch.cuda.is_available():
         device = torch.device("cuda")
         torch.compile(model)
@@ -103,6 +103,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(
-        config_path=args.config,
-    )
+    main(config_path=args.config)

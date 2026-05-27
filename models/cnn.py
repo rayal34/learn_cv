@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from fashion_mnist import constants
 
-from base import config
+from models import config
 
 
 class SimpleCNN(nn.Module):
@@ -10,11 +10,9 @@ class SimpleCNN(nn.Module):
         self,
         input_channels: int,
         input_size: int,
-        model_config: config.SimpleCNNModelConfig | None = None,
+        model_config: config.SimpleCNNModelConfig,
     ):
         super().__init__()
-        if model_config is None:
-            model_config = config.SimpleCNNModelConfig()
         self.config = model_config
 
         # Convolution layers

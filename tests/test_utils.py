@@ -222,9 +222,10 @@ def test_train_and_eval_loops(dummy_train_setup):
     dataloader, model, loss_fn, optimizer, device = dummy_train_setup
 
     # Test train_loop
-    loss, acc = train_loop(dataloader, model, loss_fn, optimizer, device)
+    loss, acc, update_scales = train_loop(dataloader, model, loss_fn, optimizer, device)
     assert loss >= 0
     assert 0.0 <= acc <= 1.0
+    assert isinstance(update_scales, dict)
 
     # Test eval_loop
     eval_loss, eval_acc = eval_loop(dataloader, model, loss_fn, device)
@@ -236,7 +237,7 @@ def test_train_one_epoch(dummy_train_setup):
     dataloader, model, loss_fn, optimizer, device = dummy_train_setup
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
 
-    train_loss, train_acc, test_loss, test_acc = train_one_epoch(
+    train_loss, train_acc, train_update_scales, test_loss, test_acc = train_one_epoch(
         train_dataloader=dataloader,
         test_dataloader=dataloader,
         model=model,
@@ -247,6 +248,7 @@ def test_train_one_epoch(dummy_train_setup):
     )
     assert train_loss >= 0
     assert train_acc >= 0
+    assert isinstance(train_update_scales, dict)
     assert test_loss >= 0
     assert test_acc >= 0
 

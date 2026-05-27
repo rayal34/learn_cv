@@ -54,6 +54,21 @@ def compute_accuracy(scores, labels):
     return (scores.argmax(1) == labels).type(torch.float).sum().item()
 
 
+def compute_update_scale(
+    model: torch.nn.Module, optimizer: torch.optim.Optimizer
+) -> dict:
+    update_scales = {}
+    lr = optimizer.param_groups[0]["lr"]
+    for name, params in model.named_parameters():
+        if params.grad is not None:
+            grad_norm = params.grad.norm().item()
+            weight_norm = params.data.norm().item()
+            update_scale = lr * grad_norm / (weight_norm + 1e-8)
+            update_scales[name] = update_scale
+
+    return update_scales
+
+
 def train_loop(
     dataloader: DataLoader,
     model,
@@ -78,7 +93,8 @@ def train_loop(
 
     total_loss /= n_samples
     accuracy = correct / n_samples
-    return total_loss, accuracy
+    update_scales = compute_update_scale(model, optimizer)
+    return total_loss, accuracy, update_scales
 
 
 def eval_loop(dataloader: DataLoader, model, loss_fn, device: torch.device):
@@ -108,13 +124,13 @@ def train_one_epoch(
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
 ):
-    train_loss, train_acc = train_loop(
+    train_loss, train_acc, train_update_scales = train_loop(
         train_dataloader, model, loss_fn, optimizer, device
     )
     test_loss, test_acc = eval_loop(test_dataloader, model, loss_fn, device)
     if scheduler:
         scheduler.step(test_loss)
-    return train_loss, train_acc, test_loss, test_acc
+    return train_loss, train_acc, train_update_scales, test_loss, test_acc
 
 
 def train_many_epochs(
@@ -131,20 +147,23 @@ def train_many_epochs(
 ):
 
     for epoch in range(epochs):
-        train_loss, train_acc, test_loss, test_acc = train_one_epoch(
-            train_dataloader,
-            test_dataloader,
-            model,
-            loss_fn,
-            device,
-            optimizer,
-            scheduler,
+        train_loss, train_acc, train_update_scales, test_loss, test_acc = (
+            train_one_epoch(
+                train_dataloader,
+                test_dataloader,
+                model,
+                loss_fn,
+                device,
+                optimizer,
+                scheduler,
+            )
         )
 
         print(
             f"Epoch {epoch + 1}/{epochs}  "
             f"train_loss: {train_loss:.4f}  "
             f"train_acc: {train_acc:.4f}  "
+            f"train_update_scales: {train_update_scales}"
             f"test_loss: {test_loss:.4f}  "
             f"test_acc: {test_acc:.4f}"
         )

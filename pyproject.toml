@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["base*", "utils*", "fashion_mnist*", "mnist*"]
+include = ["base*", "utils*", "fashion_mnist*", "mnist*", "cifar*", "resnet*"]
 
 [dependency-groups]
 dev = [
@@ -30,3 +30,7 @@ dev = [
     "pytest>=9.0.3",
     "pytest-cov>=7.1.0",
 ]
+
+
+[tool.ty.src]
+exclude = ["*.ipynb"]
