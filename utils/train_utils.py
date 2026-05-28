@@ -4,8 +4,8 @@ from datetime import datetime
 
 import numpy as np
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
 from utils import general_utils
@@ -143,9 +143,15 @@ def train_many_epochs(
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
     early_stopping: EarlyStoppingWithCheckpoint | None = None,
-    writer: SummaryWriter | None = None,
-):
+) -> tuple[nn.Module, dict[str, list]]:
 
+    metrics = {
+        "train_losses": [],
+        "test_losses": [],
+        "train_accs": [],
+        "test_accs": [],
+        # "train_update_scales": [],
+    }
     for epoch in range(epochs):
         train_loss, train_acc, train_update_scales, test_loss, test_acc = (
             train_one_epoch(
@@ -167,19 +173,20 @@ def train_many_epochs(
             f"test_loss: {test_loss:.4f}  "
             f"test_acc: {test_acc:.4f}"
         )
-        if writer:
-            writer.add_scalar("Loss/train", train_loss, epoch)
-            writer.add_scalar("Loss/test", test_loss, epoch)
-            writer.add_scalar("Accuracy/train", train_acc, epoch)
-            writer.add_scalar("Accuracy/test", test_acc, epoch)
+
+        metrics["train_losses"].append(train_loss)
+        metrics["test_losses"].append(test_loss)
+        metrics["train_accs"].append(train_acc)
+        metrics["test_accs"].append(test_acc)
+        # metrics["train_update_scales"].append(train_update_scales)
 
         if early_stopping:
             early_stopping(test_acc, model)
             if early_stopping.early_stop:
                 print(f"Early stopping at epoch {epoch + 1}")
-                return model
+                return model, metrics
 
-    return model
+    return model, metrics
 
 
 def save_model(model: torch.nn.Module, path: str, filename: str) -> None:

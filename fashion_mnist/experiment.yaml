@@ -1,4 +1,5 @@
 seed: 42
+dry_run: false
 
 dataset:
   root: "/Volumes/satechi/ml_projects/FashionMNIST"

@@ -111,6 +111,7 @@ def test_get_dataloaders_mnist(mock_load_test, mock_load_train):
 # ==========================================
 
 
+@patch("mnist.main.train_utils.save_model")
 @patch("mnist.main.train_utils.train_many_epochs")
 @patch("mnist.main.load_data.get_dataloaders")
 @patch("mnist.main.SummaryWriter")
@@ -122,6 +123,7 @@ def test_mnist_main(
     mock_summary_writer,
     mock_get_dataloaders,
     mock_train_many_epochs,
+    mock_save_model,
     tmp_path,
 ):
     # Setup mock dataloaders
@@ -141,6 +143,7 @@ def test_mnist_main(
     mock_exp.dataset.root = str(tmp_path)
     mock_exp.dataset.experiment_path = str(tmp_path / "experiments")
     mock_exp.dataset.model_path = str(tmp_path / "models")
+    mock_exp.dry_run = False
 
     mock_exp.model.conv_layers = []
     mock_exp.model.fc_hidden = []
@@ -148,6 +151,16 @@ def test_mnist_main(
     mock_exp.to_dict.return_value = {}
 
     mock_merge.return_value = mock_exp
+
+    mock_train_many_epochs.return_value = (
+        MagicMock(),
+        {
+            "train_losses": [],
+            "test_losses": [],
+            "train_accs": [],
+            "test_accs": [],
+        },
+    )
 
     # Create valid dummy YAML config file
     config_dict = {}
@@ -163,3 +176,4 @@ def test_mnist_main(
     mock_compile.assert_called_once()
     mock_train_many_epochs.assert_called_once()
     mock_summary_writer.assert_called_once()
+    mock_save_model.assert_called_once()

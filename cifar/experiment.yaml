@@ -1,8 +1,8 @@
 seed: 42
-dry_run: false
+dry_run: true
 
 dataset:
-  root: "/Volumes/satechi/ml_projects/cifar/cifar-100-python"
+  root: "/Volumes/satechi/ml_projects/cifar"
 
 data_augmentations:
   h_flip_prob: 0.5

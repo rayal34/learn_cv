@@ -220,6 +220,7 @@ def test_fashion_mnist_main(
     mock_exp.dataset.root = str(tmp_path)
     mock_exp.dataset.experiment_path = str(tmp_path / "experiments")
     mock_exp.dataset.model_path = str(tmp_path / "models")
+    mock_exp.dry_run = False
 
     # Small architecture
     mock_exp.model.conv_layers = []
@@ -228,6 +229,16 @@ def test_fashion_mnist_main(
     mock_exp.to_dict.return_value = {}
 
     mock_merge.return_value = mock_exp
+
+    mock_train_many_epochs.return_value = (
+        MagicMock(),
+        {
+            "train_losses": [],
+            "test_losses": [],
+            "train_accs": [],
+            "test_accs": [],
+        },
+    )
 
     # Create valid dummy YAML config file
     config_dict = {}

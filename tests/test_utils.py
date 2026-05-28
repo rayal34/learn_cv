@@ -258,7 +258,7 @@ def test_train_many_epochs(dummy_train_setup, tmp_path):
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
 
     # Run 2 epochs without early stopping
-    model_out = train_many_epochs(
+    model_out, _ = train_many_epochs(
         epochs=2,
         train_dataloader=dataloader,
         test_dataloader=dataloader,

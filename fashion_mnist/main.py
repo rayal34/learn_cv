@@ -28,8 +28,6 @@ def main(config_path: str):
 
     train_utils.seed_everything(exp_config.seed)
 
-    writer = SummaryWriter(f"{data_config.experiment_path}/{exp_config.name}")
-
     train_dataloader, test_dataloader = load_data.get_dataloaders(exp_config)
 
     model = SimpleCNN(constants.INPUT_CHANNELS, constants.INPUT_HEIGHT, model_config)
@@ -70,7 +68,10 @@ def main(config_path: str):
     else:
         early_stopping = None
 
-    train_utils.train_many_epochs(
+    if exp_config.dry_run:
+        train_config.num_epochs = 1
+
+    model, metrics = train_utils.train_many_epochs(
         train_config.num_epochs,
         train_dataloader,
         test_dataloader,
@@ -80,12 +81,35 @@ def main(config_path: str):
         optimizer,
         scheduler=scheduler,
         early_stopping=early_stopping,
-        writer=writer,
     )
 
-    writer.add_text("Architecture", str(model))
-    writer.add_text("Config", json.dumps(exp_config.to_dict()))
-    writer.close()
+    if not exp_config.dry_run:
+        writer = SummaryWriter(f"{data_config.experiment_path}/{exp_config.name}")
+
+        for epoch, (
+            train_loss,
+            test_loss,
+            train_acc,
+            test_acc,
+            # train_update_scale,
+        ) in enumerate(
+            zip(
+                metrics["train_losses"],
+                metrics["test_losses"],
+                metrics["train_accs"],
+                metrics["test_accs"],
+                # metrics["train_update_scales"],
+            )
+        ):
+            writer.add_scalar("Training Loss", train_loss, epoch)
+            writer.add_scalar("Test Loss", test_loss, epoch)
+            writer.add_scalar("Training Accuracy", train_acc, epoch)
+            writer.add_scalar("Test Accuracy", test_acc, epoch)
+            # writer.add_scalar("Gradient Update Scale", train_update_scale, epoch)
+
+        writer.add_text("Architecture", str(model))
+        writer.add_text("Config", json.dumps(exp_config.to_dict()))
+        writer.close()
 
     if not train_config.early_stopping:
         train_utils.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
