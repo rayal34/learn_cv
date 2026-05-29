@@ -21,18 +21,18 @@ training:
   early_stopping: true
 
 model:
-  fc_hidden: 512
+  fc: 512
   stem:
     conv:
-      - in_channels: 3
-        kernel_size: 3
-        padding: 1
-        stride: 1
+      out_channels: 64
+      kernel_size: 3
+      padding: 1
+      stride: 1
     maxpool:
-        - kernel_size: 3
-          stride: 2
-          padding: 1
-  layer:
+      kernel_size: 3
+      stride: 2
+      padding: 1
+  layers:
     - out_channels: 64
       kernel_size: 3
       padding: 1
