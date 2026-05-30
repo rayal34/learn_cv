@@ -1,5 +1,5 @@
 seed: 42
-dry_run: true
+dry_run: false
 
 dataset:
   root: "/Volumes/satechi/ml_projects/cifar"
@@ -10,18 +10,17 @@ data_augmentations:
   crop_padding: 2
 
 training:
-  learning_rate: 0.002
+  learning_rate: 0.003
   batch_size: 256
   early_stopping_patience: 20
   scheduler_patience: 5
   scheduler_factor: 0.5
-  num_epochs: 100
-  weight_decay: 0.001
+  num_epochs: 200
+  weight_decay: 0.002
 
   early_stopping: true
 
 model:
-  fc: 512
   stem:
     conv:
       out_channels: 64
@@ -48,8 +47,9 @@ model:
       padding: 1
       stride: 2
       blocks: 2
-    - out_channels: 512
-      kernel_size: 3
-      padding: 1
-      stride: 2
-      blocks: 2
+    # - out_channels: 512
+    #   kernel_size: 3
+    #   padding: 1
+    #   stride: 2
+    #   blocks: 2
+  fc: 256

@@ -152,15 +152,7 @@ def test_mnist_main(
 
     mock_merge.return_value = mock_exp
 
-    mock_train_many_epochs.return_value = (
-        MagicMock(),
-        {
-            "train_losses": [],
-            "test_losses": [],
-            "train_accs": [],
-            "test_accs": [],
-        },
-    )
+    mock_train_many_epochs.return_value = MagicMock()
 
     # Create valid dummy YAML config file
     config_dict = {}

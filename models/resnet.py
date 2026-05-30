@@ -90,12 +90,15 @@ class Stem(nn.Module):
 
 class ResNet18(nn.Module):
     def __init__(
-        self, in_channels: int, n_classes: int, model_config: config.ResNet18ModelConfig
+        self,
+        img_size: int,
+        n_classes: int,
+        model_config: config.ResNet18ModelConfig,
     ):
         super().__init__()
 
-        self.in_channels = in_channels
-        self.stem = Stem(in_channels, model_config.stem)
+        self.in_channels = model_config.stem.conv.out_channels
+        self.stem = Stem(img_size, model_config.stem)
 
         layers = []
         for layer in model_config.layers:
@@ -136,7 +139,14 @@ class ResNet18(nn.Module):
             )
 
         layers = []
-        layers.append(block(self.in_channels, out_channels, stride, downsample))
+        layers.append(
+            block(
+                in_channels=self.in_channels,
+                out_channels=out_channels,
+                stride=stride,
+                downsample=downsample,
+            )
+        )
         self.in_channels = out_channels * block.expansion
 
         for _ in range(1, blocks):
