@@ -6,7 +6,7 @@ dataset:
 
 data_augmentations:
   h_flip_prob: 0.5
-  rotate_range: [-5.0, 5.0]
+  rotate_range: [-7.0, 7.0]
   crop_padding: 2
 
 training:
@@ -42,14 +42,14 @@ model:
       padding: 1
       stride: 2
       blocks: 2
-    - out_channels: 256
-      kernel_size: 3
-      padding: 1
-      stride: 2
-      blocks: 2
+    # - out_channels: 256
+    #   kernel_size: 3
+    #   padding: 1
+    #   stride: 2
+    #   blocks: 2
     # - out_channels: 512
     #   kernel_size: 3
     #   padding: 1
     #   stride: 2
     #   blocks: 2
-  fc: 256
+  fc: 128
