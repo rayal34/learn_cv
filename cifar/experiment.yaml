@@ -6,17 +6,17 @@ dataset:
 
 data_augmentations:
   h_flip_prob: 0.5
-  rotate_range: [-7.0, 7.0]
-  crop_padding: 2
+  rotate_range: [-10.0, 10.0]
+  crop_padding: 4
 
 training:
-  learning_rate: 0.003
+  learning_rate: 0.01
   batch_size: 256
   early_stopping_patience: 20
   scheduler_patience: 5
   scheduler_factor: 0.5
   num_epochs: 200
-  weight_decay: 0.002
+  weight_decay: 0.008
 
   early_stopping: true
 
@@ -36,7 +36,7 @@ model:
       kernel_size: 3
       padding: 1
       stride: 1
-      blocks: 2
+      blocks: 3
     - out_channels: 128
       kernel_size: 3
       padding: 1
