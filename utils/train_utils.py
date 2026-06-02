@@ -208,11 +208,11 @@ def train_many_epochs(
         )
 
         print(
-            f"Epoch {epoch + 1}/{epochs}  "
-            f"train_loss: {train_loss:.4f}  "
-            f"train_acc: {train_acc:.4f}  "
-            f"current_lr: {current_lr:.4f}  "
-            f"test_loss: {test_loss:.4f}  "
+            f"Epoch {epoch + 1}/{epochs}  | "
+            f"train_loss: {train_loss:.4f}  |  "
+            f"train_acc: {train_acc:.4f}  | "
+            f"current_lr: {current_lr:.4f}  |  "
+            f"test_loss: {test_loss:.4f}  |  "
             f"test_acc: {test_acc:.4f}"
         )
 
