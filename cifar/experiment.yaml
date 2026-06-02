@@ -3,6 +3,8 @@ dry_run: false
 
 dataset:
   root: "/Volumes/satechi/ml_projects/cifar"
+  num_workers: 0
+  pin_memory: false
 
 data_augmentations:
   h_flip_prob: 0.5

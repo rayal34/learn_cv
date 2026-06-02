@@ -15,6 +15,8 @@ from models.config import SimpleCNNModelConfig
 def test_mnist_experiment_config_to_dict():
     dataset_cfg = DataConfig(
         root="/dummy_mnist",
+        num_workers=0,
+        pin_memory=False,
         train_images_filename="train_imgs",
         train_labels_filename="train_lbls",
         test_images_filename="test_imgs",
@@ -80,6 +82,8 @@ def test_get_dataloaders_mnist(mock_load_test, mock_load_train):
 
     dataset_cfg = DataConfig(
         root="/dummy_mnist",
+        num_workers=0,
+        pin_memory=False,
         train_images_filename="train_imgs",
         train_labels_filename="train_lbls",
         test_images_filename="test_imgs",

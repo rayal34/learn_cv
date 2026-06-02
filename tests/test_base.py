@@ -11,6 +11,8 @@ from models.config import ConvSpec, SimpleCNNModelConfig
 def test_data_config():
     config = DataConfig(
         root="/dummy/root",
+        num_workers=0,
+        pin_memory=False,
         train_images_filename="train-images-idx3-ubyte",
         train_labels_filename="train-labels-idx1-ubyte",
         test_images_filename="t10k-images-idx3-ubyte",

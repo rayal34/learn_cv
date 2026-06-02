@@ -12,22 +12,17 @@ from cifar import constants
 
 class Cifar100Dataset(Dataset):
     def __init__(self, imgs, labels, label_int_mapping, transforms=None):
-        self.imgs = imgs
-        self.labels = labels
-        self.label_int_mapping = label_int_mapping
+        self.imgs = torch.tensor(imgs, dtype=torch.float32)
+
+        int_labels = [label_int_mapping[l] for l in labels]
+        self.labels = torch.tensor(int_labels, dtype=torch.long)
         self.transforms = transforms
 
     def __getitem__(self, index):
         img = self.imgs[index]
         label = self.labels[index]
-
-        img = torch.tensor(img, dtype=torch.float32)
-
         if self.transforms:
             img = self.transforms(img)
-
-        label = torch.tensor(self.label_int_mapping[label], dtype=torch.long)
-
         return img, label
 
     def __len__(self):
@@ -114,10 +109,18 @@ def get_dataloaders(config: config.ExperimentConfig):
     )
 
     train_dataloader = DataLoader(
-        train_data, shuffle=True, batch_size=config.training.batch_size
+        train_data,
+        shuffle=True,
+        batch_size=config.training.batch_size,
+        num_workers=config.dataset.num_workers,
+        pin_memory=config.dataset.pin_memory,
     )
     test_dataloader = DataLoader(
-        test_data, shuffle=False, batch_size=config.training.batch_size
+        test_data,
+        shuffle=False,
+        batch_size=config.training.batch_size,
+        num_workers=config.dataset.num_workers,
+        pin_memory=config.dataset.pin_memory,
     )
 
     return train_dataloader, test_dataloader

@@ -36,6 +36,8 @@ def test_data_augmentation_config():
 def test_experiment_config_to_dict():
     dataset_cfg = DataConfig(
         root="/dummy",
+        num_workers=0,
+        pin_memory=False,
         train_images_filename="train_imgs",
         train_labels_filename="train_lbls",
         test_images_filename="test_imgs",
@@ -135,6 +137,8 @@ def test_load_dataset(mock_load_labels, mock_load_images):
 
     dataset_cfg = DataConfig(
         root="/dummy",
+        num_workers=0,
+        pin_memory=False,
         train_images_filename="train_imgs",
         train_labels_filename="train_lbls",
         test_images_filename="test_imgs",
@@ -157,6 +161,8 @@ def test_get_dataloaders(mock_load_dataset):
 
     dataset_cfg = DataConfig(
         root="/dummy",
+        num_workers=0,
+        pin_memory=False,
         train_images_filename="train_imgs",
         train_labels_filename="train_lbls",
         test_images_filename="test_imgs",

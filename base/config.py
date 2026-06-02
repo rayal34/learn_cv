@@ -9,6 +9,8 @@ from utils import train_utils
 @dataclass
 class DataConfig:
     root: str
+    num_workers: int
+    pin_memory: bool
 
     train_images_filename: str | None = None
     train_labels_filename: str | None = None
