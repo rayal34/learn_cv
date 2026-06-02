@@ -38,3 +38,26 @@ def mixup(X, y, alpha: float, num_classes: int, device: torch.device):
     y_onehot = F.one_hot(y, num_classes).float()
     y_mix = lambda_ * y_onehot + (1 - lambda_) * y_onehot[idx]
     return X_mix, y_mix
+
+
+class Cutup:
+    def __init__(self, size: int, fill_value: int = 0, count: int = 1):
+        self.size = size
+        self.fill_value = fill_value
+        self.count = count
+
+    def __call__(self, img):
+        _, height, width = img.shape
+
+        for _ in range(self.count):
+            x_center = np.random.choice(np.arange(width)).item()
+            y_center = np.random.choice(np.arange(height)).item()
+
+            x_start = max(0, x_center - self.size // 2)
+            x_end = min(width, x_start + self.size)
+            y_start = max(0, y_center - self.size // 2)
+            y_end = min(height, y_start + self.size)
+
+            img[:, x_start:x_end, y_start:y_end] = self.fill_value
+
+        return img

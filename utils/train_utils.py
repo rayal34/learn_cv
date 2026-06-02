@@ -165,10 +165,11 @@ def train_one_epoch(
     train_loss, train_acc, train_update_scales = train_loop_fn(
         train_dataloader, model, train_loss_fn, optimizer, device
     )
+    current_lr = optimizer.param_groups[0]["lr"]
     test_loss, test_acc = eval_loop(test_dataloader, model, device, eval_loss_fn)
     if scheduler:
         scheduler.step(test_loss)
-    return train_loss, train_acc, train_update_scales, test_loss, test_acc
+    return train_loss, train_acc, train_update_scales, current_lr, test_loss, test_acc
 
 
 def train_many_epochs(
@@ -187,33 +188,40 @@ def train_many_epochs(
 ) -> nn.Module:
 
     for epoch in range(epochs):
-        train_loss, train_acc, train_update_scales, test_loss, test_acc = (
-            train_one_epoch(
-                train_dataloader=train_dataloader,
-                test_dataloader=test_dataloader,
-                model=model,
-                train_loss_fn=train_loss_fn,
-                eval_loss_fn=eval_loss_fn,
-                device=device,
-                optimizer=optimizer,
-                scheduler=scheduler,
-                train_loop_fn=train_loop_fn,
-            )
+        (
+            train_loss,
+            train_acc,
+            train_update_scales,
+            current_lr,
+            test_loss,
+            test_acc,
+        ) = train_one_epoch(
+            train_dataloader=train_dataloader,
+            test_dataloader=test_dataloader,
+            model=model,
+            train_loss_fn=train_loss_fn,
+            eval_loss_fn=eval_loss_fn,
+            device=device,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            train_loop_fn=train_loop_fn,
         )
 
         print(
             f"Epoch {epoch + 1}/{epochs}  "
             f"train_loss: {train_loss:.4f}  "
             f"train_acc: {train_acc:.4f}  "
+            f"current_lr: {current_lr:.4f}  "
             f"test_loss: {test_loss:.4f}  "
             f"test_acc: {test_acc:.4f}"
         )
 
         if writer:
-            writer.add_scalar("Training Loss", train_loss, epoch)
-            writer.add_scalar("Test Loss", test_loss, epoch)
-            writer.add_scalar("Training Accuracy", train_acc, epoch)
-            writer.add_scalar("Test Accuracy", test_acc, epoch)
+            writer.add_scalar("Loss/training", train_loss, epoch)
+            writer.add_scalar("Loss/test", test_loss, epoch)
+            writer.add_scalar("Accuracy/training", train_acc, epoch)
+            writer.add_scalar("Accuracy/test", test_acc, epoch)
+            writer.add_scalar("Learning Rate", current_lr, epoch)
             for layer_name, update_scale in train_update_scales.items():
                 writer.add_scalar(
                     f"Gradient Update Scale {layer_name}", update_scale, epoch

@@ -237,19 +237,22 @@ def test_train_one_epoch(dummy_train_setup):
     dataloader, model, loss_fn, optimizer, device = dummy_train_setup
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
 
-    train_loss, train_acc, train_update_scales, test_loss, test_acc = train_one_epoch(
-        train_dataloader=dataloader,
-        test_dataloader=dataloader,
-        model=model,
-        train_loss_fn=loss_fn,
-        eval_loss_fn=loss_fn,
-        device=device,
-        optimizer=optimizer,
-        scheduler=scheduler,
+    train_loss, train_acc, train_update_scales, current_lr, test_loss, test_acc = (
+        train_one_epoch(
+            train_dataloader=dataloader,
+            test_dataloader=dataloader,
+            model=model,
+            train_loss_fn=loss_fn,
+            eval_loss_fn=loss_fn,
+            device=device,
+            optimizer=optimizer,
+            scheduler=scheduler,
+        )
     )
     assert train_loss >= 0
     assert train_acc >= 0
     assert isinstance(train_update_scales, dict)
+    assert current_lr > 0
     assert test_loss >= 0
     assert test_acc >= 0
 
@@ -302,7 +305,7 @@ def test_train_one_epoch_custom_loop(dummy_train_setup):
     def mock_train_loop(*args, **kwargs):
         return 0.123, 0.999, {"layer": 0.01}
 
-    train_loss, train_acc, train_update_scales, test_loss, test_acc = train_one_epoch(
+    train_loss, train_acc, train_update_scales, _, _, _ = train_one_epoch(
         train_dataloader=dataloader,
         test_dataloader=dataloader,
         model=model,
