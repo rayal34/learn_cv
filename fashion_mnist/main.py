@@ -57,7 +57,8 @@ def main(config_path: str):
         scheduler_patience=train_config.scheduler_patience,
         scheduler_factor=train_config.scheduler_factor,
     )
-    loss_fn = nn.CrossEntropyLoss(reduction="sum")
+    train_loss_fn = nn.CrossEntropyLoss(reduction="sum")
+    eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
     if train_config.early_stopping:
         early_stopping = train_utils.EarlyStoppingWithCheckpoint(
@@ -81,13 +82,14 @@ def main(config_path: str):
         writer.add_text("Config", json.dumps(config_dict))
 
     model = train_utils.train_many_epochs(
-        train_config.num_epochs,
-        train_dataloader,
-        test_dataloader,
-        model,
-        loss_fn,
-        device,
-        optimizer,
+        epochs=train_config.num_epochs,
+        train_dataloader=train_dataloader,
+        test_dataloader=test_dataloader,
+        model=model,
+        train_loss_fn=train_loss_fn,
+        eval_loss_fn=eval_loss_fn,
+        device=device,
+        optimizer=optimizer,
         scheduler=scheduler,
         early_stopping=early_stopping,
         writer=writer,

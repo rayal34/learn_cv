@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+from functools import partial
 from typing import cast
 
 import torch
@@ -9,7 +10,7 @@ from base import config
 from models.resnet import ResNet18
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
-from utils import train_utils
+from utils import loss_functions, train_utils
 
 from cifar import constants, load_data
 
@@ -58,7 +59,8 @@ def main(config_path: str):
         scheduler_factor=train_config.scheduler_factor,
     )
 
-    loss_fn = nn.CrossEntropyLoss(reduction="sum")
+    train_loss_fn = loss_functions.SoftCrossEntropyLoss(reduction="sum")
+    eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
     if train_config.early_stopping:
         early_stopping = train_utils.EarlyStoppingWithCheckpoint(
@@ -81,17 +83,28 @@ def main(config_path: str):
             config_dict = exp_config.to_dict()
         writer.add_text("Config", json.dumps(config_dict))
 
+    if exp_config.data_augmentations.mixup_alpha > 0.0:
+        train_loop_fn = partial(
+            train_utils.train_loop_with_mixup,
+            alpha=exp_config.data_augmentations.mixup_alpha,
+            num_classes=constants.NUM_CLASSES,
+        )
+    else:
+        train_loop_fn = train_utils.train_loop
+
     model = train_utils.train_many_epochs(
-        train_config.num_epochs,
-        train_dataloader,
-        test_dataloader,
-        model,
-        loss_fn,
-        device,
-        optimizer,
+        epochs=train_config.num_epochs,
+        train_dataloader=train_dataloader,
+        test_dataloader=test_dataloader,
+        model=model,
+        train_loss_fn=train_loss_fn,
+        eval_loss_fn=eval_loss_fn,
+        device=device,
+        optimizer=optimizer,
         scheduler=scheduler,
         early_stopping=early_stopping,
         writer=writer,
+        train_loop_fn=train_loop_fn,
     )
 
     if writer is not None:

@@ -228,7 +228,7 @@ def test_train_and_eval_loops(dummy_train_setup):
     assert isinstance(update_scales, dict)
 
     # Test eval_loop
-    eval_loss, eval_acc = eval_loop(dataloader, model, loss_fn, device)
+    eval_loss, eval_acc = eval_loop(dataloader, model, device, loss_fn)
     assert eval_loss >= 0
     assert 0.0 <= eval_acc <= 1.0
 
@@ -241,7 +241,8 @@ def test_train_one_epoch(dummy_train_setup):
         train_dataloader=dataloader,
         test_dataloader=dataloader,
         model=model,
-        loss_fn=loss_fn,
+        train_loss_fn=loss_fn,
+        eval_loss_fn=loss_fn,
         device=device,
         optimizer=optimizer,
         scheduler=scheduler,
@@ -263,7 +264,8 @@ def test_train_many_epochs(dummy_train_setup, tmp_path):
         train_dataloader=dataloader,
         test_dataloader=dataloader,
         model=model,
-        loss_fn=loss_fn,
+        train_loss_fn=loss_fn,
+        eval_loss_fn=loss_fn,
         device=device,
         optimizer=optimizer,
         scheduler=scheduler,
@@ -283,7 +285,8 @@ def test_train_many_epochs(dummy_train_setup, tmp_path):
         train_dataloader=dataloader,
         test_dataloader=dataloader,
         model=model,
-        loss_fn=loss_fn,
+        train_loss_fn=loss_fn,
+        eval_loss_fn=loss_fn,
         device=device,
         optimizer=optimizer,
         scheduler=scheduler,
@@ -291,3 +294,24 @@ def test_train_many_epochs(dummy_train_setup, tmp_path):
     )
     # Should stop early or complete
     assert early_stopping.best_score is not None
+
+
+def test_train_one_epoch_custom_loop(dummy_train_setup):
+    dataloader, model, loss_fn, optimizer, device = dummy_train_setup
+
+    def mock_train_loop(*args, **kwargs):
+        return 0.123, 0.999, {"layer": 0.01}
+
+    train_loss, train_acc, train_update_scales, test_loss, test_acc = train_one_epoch(
+        train_dataloader=dataloader,
+        test_dataloader=dataloader,
+        model=model,
+        train_loss_fn=loss_fn,
+        eval_loss_fn=loss_fn,
+        device=device,
+        optimizer=optimizer,
+        train_loop_fn=mock_train_loop,
+    )
+    assert train_loss == 0.123
+    assert train_acc == 0.999
+    assert train_update_scales == {"layer": 0.01}

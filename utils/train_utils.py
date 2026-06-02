@@ -1,6 +1,7 @@
 import os
 import random
 from datetime import datetime
+from typing import Callable
 
 import numpy as np
 import torch
@@ -10,6 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
 from utils import general_utils
+from utils.augmentation_utils import mixup
 
 
 class EarlyStoppingWithCheckpoint:
@@ -83,14 +85,14 @@ def train_loop(
     n_samples = len(dataloader.dataset)  # type: ignore
     for X, y in dataloader:
         X, y = X.to(device), y.to(device)
-        pred = model(X)
-        loss = loss_fn(pred, y)
+        logits = model(X)
+        loss = loss_fn(logits, y)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
-        correct += compute_accuracy(pred, y)
+        correct += compute_accuracy(logits, y)
 
     total_loss /= n_samples
     accuracy = correct / n_samples
@@ -98,7 +100,40 @@ def train_loop(
     return total_loss, accuracy, update_scales
 
 
-def eval_loop(dataloader: DataLoader, model, loss_fn, device: torch.device):
+def train_loop_with_mixup(
+    dataloader: DataLoader,
+    model,
+    loss_fn,
+    optimizer,
+    device: torch.device,
+    alpha: float,
+    num_classes: int,
+):
+    model.to(device)
+    model.train()
+    total_loss, correct = 0, 0
+    n_samples = len(dataloader.dataset)  # type: ignore
+    for X, y in dataloader:
+        X, y = X.to(device), y.to(device)
+        X_mix, y_mix = mixup(X, y, alpha=alpha, num_classes=num_classes, device=device)
+        logits = model(X_mix)
+        loss = loss_fn(logits, y_mix)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+        correct += compute_accuracy(logits, y)
+
+    total_loss /= n_samples
+    accuracy = correct / n_samples
+    update_scales = compute_update_scale(model, optimizer)
+    return total_loss, accuracy, update_scales
+
+
+def eval_loop(
+    dataloader: DataLoader, model, device: torch.device, loss_fn: torch.nn.Module
+):
     model.to(device)
     model.eval()
     n_samples = len(dataloader.dataset)  # type: ignore
@@ -106,9 +141,9 @@ def eval_loop(dataloader: DataLoader, model, loss_fn, device: torch.device):
     with torch.no_grad():
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
-            pred = model(X)
-            test_loss += loss_fn(pred, y).item()
-            correct += compute_accuracy(pred, y)
+            logits = model(X)
+            test_loss += loss_fn(logits, y).item()
+            correct += compute_accuracy(logits, y)
 
     test_loss /= n_samples
     accuracy = correct / n_samples
@@ -119,16 +154,18 @@ def eval_loop(dataloader: DataLoader, model, loss_fn, device: torch.device):
 def train_one_epoch(
     train_dataloader: DataLoader,
     test_dataloader: DataLoader,
-    model,
-    loss_fn,
+    model: torch.nn.Module,
+    train_loss_fn: torch.nn.Module,
+    eval_loss_fn: torch.nn.Module,
     device: torch.device,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
+    train_loop_fn: Callable = train_loop,
 ):
-    train_loss, train_acc, train_update_scales = train_loop(
-        train_dataloader, model, loss_fn, optimizer, device
+    train_loss, train_acc, train_update_scales = train_loop_fn(
+        train_dataloader, model, train_loss_fn, optimizer, device
     )
-    test_loss, test_acc = eval_loop(test_dataloader, model, loss_fn, device)
+    test_loss, test_acc = eval_loop(test_dataloader, model, device, eval_loss_fn)
     if scheduler:
         scheduler.step(test_loss)
     return train_loss, train_acc, train_update_scales, test_loss, test_acc
@@ -139,24 +176,28 @@ def train_many_epochs(
     train_dataloader: DataLoader,
     test_dataloader: DataLoader,
     model: torch.nn.Module,
-    loss_fn: torch.nn.Module,
+    train_loss_fn: torch.nn.Module,
+    eval_loss_fn: torch.nn.Module,
     device: torch.device,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
     early_stopping: EarlyStoppingWithCheckpoint | None = None,
     writer: SummaryWriter | None = None,
+    train_loop_fn: Callable = train_loop,
 ) -> nn.Module:
 
     for epoch in range(epochs):
         train_loss, train_acc, train_update_scales, test_loss, test_acc = (
             train_one_epoch(
-                train_dataloader,
-                test_dataloader,
-                model,
-                loss_fn,
-                device,
-                optimizer,
-                scheduler,
+                train_dataloader=train_dataloader,
+                test_dataloader=test_dataloader,
+                model=model,
+                train_loss_fn=train_loss_fn,
+                eval_loss_fn=eval_loss_fn,
+                device=device,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                train_loop_fn=train_loop_fn,
             )
         )
 

@@ -43,6 +43,7 @@ class DataAugmentationConfig:
     h_flip_prob: float = 0.5
     rotate_range: list[float] = field(default_factory=lambda: [-5.0, 5.0])
     crop_padding: int = 2
+    mixup_alpha: float = 0.0
 
 
 @dataclass
