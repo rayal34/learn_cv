@@ -59,9 +59,6 @@ def main(config_path: str):
         scheduler_factor=train_config.scheduler_factor,
     )
 
-    train_loss_fn = loss_functions.SoftCrossEntropyLoss(reduction="sum")
-    eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")
-
     if train_config.early_stopping:
         early_stopping = train_utils.EarlyStoppingWithCheckpoint(
             model_path=data_config.model_path,
@@ -89,8 +86,12 @@ def main(config_path: str):
             alpha=exp_config.data_augmentations.mixup_alpha,
             num_classes=constants.NUM_CLASSES,
         )
+        train_loss_fn = loss_functions.SoftCrossEntropyLoss(reduction="sum")
     else:
         train_loop_fn = train_utils.train_loop
+        train_loss_fn = nn.CrossEntropyLoss(reduction="sum")
+
+    eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
     if exp_config.training.use_profiler:
         profiler_dir = f"{data_config.experiment_path}/{exp_config.name}/profile"
