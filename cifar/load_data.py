@@ -61,8 +61,8 @@ def load_dataset(
 
     imgs, labels = data["data"], data["fine_labels"]
     if dry_run:
-        imgs = imgs[:100]
-        labels = labels[:100]
+        imgs = imgs[:500]
+        labels = labels[:500]
 
     imgs = imgs.reshape(
         -1, constants.INPUT_CHANNELS, constants.INPUT_HEIGHT, constants.INPUT_WIDTH
