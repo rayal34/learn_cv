@@ -282,7 +282,7 @@ def train_many_epochs(
             writer.add_scalar("Learning Rate", current_lr, epoch)
             for layer_name, update_scale in train_update_scales.items():
                 writer.add_scalar(
-                    f"Gradient Update Scale {layer_name}", update_scale, epoch
+                    f"Gradient Update Scale/{layer_name}", update_scale, epoch
                 )
 
         if early_stopping:
