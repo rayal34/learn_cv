@@ -2,7 +2,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 import torch
 import yaml
-from base.config import DataConfig, ExperimentConfig, TrainingConfig
+from mnist.config import DataConfig, ExperimentConfig, TrainingConfig
 from mnist.load_data import get_dataloaders, load_test_data, load_training_data
 from mnist.main import main
 from models.config import SimpleCNNModelConfig

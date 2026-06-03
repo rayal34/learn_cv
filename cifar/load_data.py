@@ -2,12 +2,11 @@ import os
 import pickle as pk
 
 import torch
-from base import config
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import v2
 from utils.augmentation_utils import ZeroOneScale
 
-from cifar import constants
+from cifar import config, constants
 
 
 class Cifar100Dataset(Dataset):
@@ -86,11 +85,18 @@ def get_dataloaders(config: config.ExperimentConfig):
                 v2.RandomCrop(
                     constants.INPUT_HEIGHT,
                     padding=config.data_augmentations.crop_padding,
+                    padding_mode="reflect",
                 ),
                 ZeroOneScale(
                     min_val=constants.MIN_PIXEL_VALUE, max_val=constants.MAX_PIXEL_VALUE
                 ),
                 v2.Normalize(mean=constants.MEANS, std=constants.STDS),
+                v2.RandomErasing(
+                    p=config.data_augmentations.random_erasing_p,
+                    scale=config.data_augmentations.random_erasing_scale,
+                    ratio=config.data_augmentations.random_erasing_ratio,
+                    value=config.data_augmentations.random_erasing_value,  # type: ignore
+                ),
             ]
         ),
     )

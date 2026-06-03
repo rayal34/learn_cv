@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import torch
 import yaml
-from base.config import (
+from fashion_mnist.config import (
     DataAugmentationConfig,
     DataConfig,
     ExperimentConfig,

@@ -5,13 +5,12 @@ from typing import cast
 
 import torch
 import torch.nn as nn
-from base import config
 from models.cnn import SimpleCNN
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 from utils import train_utils
 
-from fashion_mnist import constants, load_data
+from fashion_mnist import config, constants, load_data
 
 
 def main(config_path: str):

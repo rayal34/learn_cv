@@ -8,9 +8,17 @@ dataset:
 
 data_augmentations:
   h_flip_prob: 0.5
+
   rotate_range: [-5.0, 5.0]
+
   crop_padding: 2
-  mixup_alpha: 0.3
+
+  mixup_alpha: 0
+
+  random_erasing_p: 0.5
+  random_erasing_scale: [0.02, 0.33]
+  random_erasing_ratio: [0.33, 3.0]
+  random_erasing_value: 0
 
 training:
   learning_rate: 0.005

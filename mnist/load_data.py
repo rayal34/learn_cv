@@ -1,9 +1,8 @@
-from base import config
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import Compose, Normalize, ToTensor
 
-from mnist import constants
+from mnist import config, constants
 
 
 def load_training_data(root):

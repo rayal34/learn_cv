@@ -1,43 +1,9 @@
-import os
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from base.config import DataConfig, TrainingConfig
 from omegaconf import MISSING
 from utils import train_utils
-
-
-@dataclass
-class DataConfig:
-    root: str
-    num_workers: int
-    pin_memory: bool
-
-    train_images_filename: str | None = None
-    train_labels_filename: str | None = None
-    test_images_filename: str | None = None
-    test_labels_filename: str | None = None
-
-    data_path: str = field(init=False, default="${.root}/data")
-    model_path: str = field(init=False, default="${.root}/models")
-    experiment_path: str = field(init=False, default="${.root}/experiments")
-
-    def __post_init__(self):
-        self.data_path = os.path.join(self.root, "data")
-        self.model_path = os.path.join(self.root, "models")
-        self.experiment_path = os.path.join(self.root, "experiments")
-
-
-@dataclass
-class TrainingConfig:
-    learning_rate: float
-    batch_size: int
-    early_stopping_patience: int
-    scheduler_patience: int
-    scheduler_factor: float
-    num_epochs: int
-
-    weight_decay: float
-    early_stopping: bool
 
 
 @dataclass
@@ -47,6 +13,13 @@ class DataAugmentationConfig:
     rotate_range: list[float] = field(default_factory=lambda: [-5.0, 5.0])
 
     crop_padding: int = 2
+
+    mixup_alpha: float = 0.0
+
+    random_erasing_p: float = 0.5
+    random_erasing_scale: list[float] = field(default_factory=lambda: [0.02, 0.33])
+    random_erasing_ratio: list[float] = field(default_factory=lambda: [0.33, 3.0])
+    random_erasing_value: int | float | tuple[int, int, int] = 0
 
 
 @dataclass

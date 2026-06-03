@@ -6,13 +6,12 @@ from typing import cast
 
 import torch
 import torch.nn as nn
-from base import config
 from models.resnet import ResNet18
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 from utils import loss_functions, train_utils
 
-from cifar import constants, load_data
+from cifar import config, constants, load_data
 
 
 def run_profiler(
