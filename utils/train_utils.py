@@ -214,7 +214,12 @@ def train_one_epoch(
     profiler_dir: str | None = None,
 ):
     train_loss, train_acc, train_update_scales = train_loop_fn(
-        train_dataloader, model, train_loss_fn, optimizer, device, profiler_dir
+        dataloader=train_dataloader,
+        model=model,
+        loss_fn=train_loss_fn,
+        optimizer=optimizer,
+        device=device,
+        profiler_dir=profiler_dir,
     )
     current_lr = optimizer.param_groups[0]["lr"]
     test_loss, test_acc = eval_loop(test_dataloader, model, device, eval_loss_fn)
