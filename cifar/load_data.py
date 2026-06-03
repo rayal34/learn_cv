@@ -2,7 +2,7 @@ import os
 import pickle as pk
 
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, default_collate
 from torchvision.transforms import v2
 from utils.augmentation_utils import ZeroOneScale
 
@@ -91,12 +91,6 @@ def get_dataloaders(config: config.ExperimentConfig):
                     min_val=constants.MIN_PIXEL_VALUE, max_val=constants.MAX_PIXEL_VALUE
                 ),
                 v2.Normalize(mean=constants.MEANS, std=constants.STDS),
-                v2.RandomErasing(
-                    p=config.data_augmentations.random_erasing_p,
-                    scale=config.data_augmentations.random_erasing_scale,
-                    ratio=config.data_augmentations.random_erasing_ratio,
-                    value=config.data_augmentations.random_erasing_value,  # type: ignore
-                ),
             ]
         ),
     )
@@ -114,12 +108,24 @@ def get_dataloaders(config: config.ExperimentConfig):
         ),
     )
 
+    cutmix = v2.CutMix(
+        alpha=config.data_augmentations.mixup_alpha, num_classes=constants.NUM_CLASSES
+    )
+    mixup = v2.MixUp(
+        alpha=config.data_augmentations.mixup_alpha, num_classes=constants.NUM_CLASSES
+    )
+    cutmix_or_mixup = v2.RandomChoice([cutmix, mixup])
+
+    def collate_fn(batch):
+        return cutmix_or_mixup(*default_collate(batch))
+
     train_dataloader = DataLoader(
         train_data,
         shuffle=True,
         batch_size=config.training.batch_size,
         num_workers=config.dataset.num_workers,
         pin_memory=config.dataset.pin_memory,
+        collate_fn=collate_fn,
     )
     test_dataloader = DataLoader(
         test_data,

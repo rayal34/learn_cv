@@ -1,5 +1,5 @@
 seed: 42
-dry_run: false
+dry_run: true
 
 dataset:
   root: "/Volumes/satechi/ml_projects/cifar"
@@ -13,12 +13,7 @@ data_augmentations:
 
   crop_padding: 2
 
-  mixup_alpha: 0
-
-  random_erasing_p: 0.5
-  random_erasing_scale: [0.02, 0.33]
-  random_erasing_ratio: [0.33, 3.0]
-  random_erasing_value: 0
+  mixup_alpha: 0.2
 
 training:
   learning_rate: 0.005

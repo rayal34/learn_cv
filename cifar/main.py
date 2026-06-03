@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-from functools import partial
 from typing import cast
 
 import torch
@@ -9,7 +8,7 @@ import torch.nn as nn
 from models.resnet import ResNet18
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
-from utils import loss_functions, train_utils
+from utils import train_utils
 
 from cifar import config, constants, load_data
 
@@ -23,7 +22,6 @@ def run_profiler(
     device,
     optimizer,
     scheduler,
-    train_loop_fn,
     profiler_dir,
     num_epochs=5,
 ):
@@ -40,7 +38,6 @@ def run_profiler(
         scheduler=scheduler,
         early_stopping=None,
         writer=None,
-        train_loop_fn=train_loop_fn,
         profiler_dir=profiler_dir,
     )
 
@@ -59,7 +56,6 @@ def run_training(
     scheduler,
     early_stopping,
     writer,
-    train_loop_fn,
 ):
     model = train_utils.train_many_epochs(
         epochs=train_config.num_epochs,
@@ -73,7 +69,6 @@ def run_training(
         scheduler=scheduler,
         early_stopping=early_stopping,
         writer=writer,
-        train_loop_fn=train_loop_fn,
     )
 
     if writer is not None:
@@ -147,17 +142,7 @@ def main(config_path: str, profile: bool = False):
             config_dict = exp_config.to_dict()
         writer.add_text("Config", json.dumps(config_dict))
 
-    if exp_config.data_augmentations.mixup_alpha > 0.0:
-        train_loop_fn = partial(
-            train_utils.train_loop_with_mixup,
-            alpha=exp_config.data_augmentations.mixup_alpha,
-            num_classes=constants.NUM_CLASSES,
-        )
-        train_loss_fn = loss_functions.SoftCrossEntropyLoss(reduction="sum")
-    else:
-        train_loop_fn = train_utils.train_loop
-        train_loss_fn = nn.CrossEntropyLoss(reduction="sum")
-
+    train_loss_fn = nn.CrossEntropyLoss(reduction="sum")
     eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
     if profile:
@@ -171,7 +156,6 @@ def main(config_path: str, profile: bool = False):
             device,
             optimizer,
             scheduler,
-            train_loop_fn,
             profiler_dir,
             num_epochs=5,
         )
@@ -190,7 +174,6 @@ def main(config_path: str, profile: bool = False):
             scheduler,
             early_stopping,
             writer,
-            train_loop_fn,
         )
 
 

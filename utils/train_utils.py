@@ -2,7 +2,6 @@ import contextlib
 import os
 import random
 from datetime import datetime
-from typing import Callable
 
 import numpy as np
 import torch
@@ -12,7 +11,6 @@ from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
 from utils import general_utils
-from utils.augmentation_utils import cutmix, mixup
 
 
 class EarlyStoppingWithCheckpoint:
@@ -125,118 +123,6 @@ def train_loop(
     return total_loss, accuracy, update_scales
 
 
-def train_loop_with_mixup(
-    dataloader: DataLoader,
-    model,
-    loss_fn,
-    optimizer,
-    device: torch.device,
-    alpha: float,
-    num_classes: int,
-    profiler_dir: str | None = None,
-):
-    model.to(device)
-    model.train()
-    total_loss, correct = 0, 0
-    n_samples = len(dataloader.dataset)  # type: ignore
-
-    if profiler_dir is not None:
-        activities = [torch.profiler.ProfilerActivity.CPU]
-        if device.type == "cuda":
-            activities.append(torch.profiler.ProfilerActivity.CUDA)
-        prof_ctx = torch.profiler.profile(
-            activities=activities,
-            schedule=torch.profiler.schedule(wait=2, warmup=2, active=5, repeat=1),
-            on_trace_ready=torch.profiler.tensorboard_trace_handler(profiler_dir),
-            record_shapes=True,
-            profile_memory=True,
-            with_stack=True,
-        )
-    else:
-        prof_ctx = contextlib.nullcontext()
-
-    with prof_ctx as prof:
-        for step, (X, y) in enumerate(dataloader):
-            X, y = X.to(device), y.to(device)
-            X_mix, y_mix = mixup(
-                X, y, alpha=alpha, num_classes=num_classes, device=device
-            )
-            logits = model(X_mix)
-            loss = loss_fn(logits, y_mix)
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-            correct += compute_accuracy(logits, y)
-
-            if profiler_dir is not None:
-                prof.step()  # type: ignore
-                if step > 10:
-                    break
-
-    total_loss /= n_samples
-    accuracy = correct / n_samples
-    update_scales = compute_update_scale(model, optimizer)
-    return total_loss, accuracy, update_scales
-
-
-def train_loop_with_cutmix(
-    dataloader: DataLoader,
-    model,
-    loss_fn,
-    optimizer,
-    device: torch.device,
-    alpha: float,
-    num_classes: int,
-    profiler_dir: str | None = None,
-):
-    model.to(device)
-    model.train()
-    total_loss, correct = 0, 0
-    n_samples = len(dataloader.dataset)  # type: ignore
-
-    if profiler_dir is not None:
-        activities = [torch.profiler.ProfilerActivity.CPU]
-        if device.type == "cuda":
-            activities.append(torch.profiler.ProfilerActivity.CUDA)
-        prof_ctx = torch.profiler.profile(
-            activities=activities,
-            schedule=torch.profiler.schedule(wait=2, warmup=2, active=5, repeat=1),
-            on_trace_ready=torch.profiler.tensorboard_trace_handler(profiler_dir),
-            record_shapes=True,
-            profile_memory=True,
-            with_stack=True,
-        )
-    else:
-        prof_ctx = contextlib.nullcontext()
-
-    with prof_ctx as prof:
-        for step, (X, y) in enumerate(dataloader):
-            X, y = X.to(device), y.to(device)
-            X_mix, y_mix = cutmix(
-                X, y, alpha=alpha, num_classes=num_classes, device=device
-            )
-            logits = model(X_mix)
-            loss = loss_fn(logits, y_mix)
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-            correct += compute_accuracy(logits, y)
-
-            if profiler_dir is not None:
-                prof.step()  # type: ignore
-                if step > 10:
-                    break
-
-    total_loss /= n_samples
-    accuracy = correct / n_samples
-    update_scales = compute_update_scale(model, optimizer)
-    return total_loss, accuracy, update_scales
-
-
 def eval_loop(
     dataloader: DataLoader, model, device: torch.device, loss_fn: torch.nn.Module
 ):
@@ -266,10 +152,9 @@ def train_one_epoch(
     device: torch.device,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
-    train_loop_fn: Callable = train_loop,
     profiler_dir: str | None = None,
 ):
-    train_loss, train_acc, train_update_scales = train_loop_fn(
+    train_loss, train_acc, train_update_scales = train_loop(
         dataloader=train_dataloader,
         model=model,
         loss_fn=train_loss_fn,
@@ -296,7 +181,6 @@ def train_many_epochs(
     scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
     early_stopping: EarlyStoppingWithCheckpoint | None = None,
     writer: SummaryWriter | None = None,
-    train_loop_fn: Callable = train_loop,
     profiler_dir: str | None = None,
 ) -> nn.Module:
 
@@ -317,7 +201,6 @@ def train_many_epochs(
             device=device,
             optimizer=optimizer,
             scheduler=scheduler,
-            train_loop_fn=train_loop_fn,
             profiler_dir=profiler_dir,
         )
 

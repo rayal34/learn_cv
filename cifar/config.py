@@ -16,11 +16,6 @@ class DataAugmentationConfig:
 
     mixup_alpha: float = 0.0
 
-    random_erasing_p: float = 0.5
-    random_erasing_scale: list[float] = field(default_factory=lambda: [0.02, 0.33])
-    random_erasing_ratio: list[float] = field(default_factory=lambda: [0.33, 3.0])
-    random_erasing_value: int | float | tuple[int, int, int] = 0
-
 
 @dataclass
 class ExperimentConfig:

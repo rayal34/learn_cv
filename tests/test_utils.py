@@ -1,5 +1,6 @@
 import os
 import time
+from unittest.mock import patch
 
 import pytest
 import torch
@@ -302,19 +303,18 @@ def test_train_many_epochs(dummy_train_setup, tmp_path):
 def test_train_one_epoch_custom_loop(dummy_train_setup):
     dataloader, model, loss_fn, optimizer, device = dummy_train_setup
 
-    def mock_train_loop(*args, **kwargs):
-        return 0.123, 0.999, {"layer": 0.01}
-
-    train_loss, train_acc, train_update_scales, _, _, _ = train_one_epoch(
-        train_dataloader=dataloader,
-        test_dataloader=dataloader,
-        model=model,
-        train_loss_fn=loss_fn,
-        eval_loss_fn=loss_fn,
-        device=device,
-        optimizer=optimizer,
-        train_loop_fn=mock_train_loop,
-    )
+    with patch(
+        "utils.train_utils.train_loop", return_value=(0.123, 0.999, {"layer": 0.01})
+    ):
+        train_loss, train_acc, train_update_scales, _, _, _ = train_one_epoch(
+            train_dataloader=dataloader,
+            test_dataloader=dataloader,
+            model=model,
+            train_loss_fn=loss_fn,
+            eval_loss_fn=loss_fn,
+            device=device,
+            optimizer=optimizer,
+        )
     assert train_loss == 0.123
     assert train_acc == 0.999
     assert train_update_scales == {"layer": 0.01}
