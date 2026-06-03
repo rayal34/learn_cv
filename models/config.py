@@ -45,4 +45,3 @@ class ResNetBlockConfig:
 class ResNet18ModelConfig:
     stem: ResNetStemConfig = MISSING
     layers: list[ResNetBlockConfig] = MISSING
-    fc: int = MISSING

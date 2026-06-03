@@ -1,5 +1,5 @@
 seed: 42
-dry_run: true
+dry_run: false
 
 dataset:
   root: "/Volumes/satechi/ml_projects/cifar"
@@ -22,7 +22,7 @@ training:
   weight_decay: 0.005
 
   early_stopping: true
-  use_profiler: false
+  use_profiler: true
 
 model:
   stem:
@@ -56,4 +56,3 @@ model:
     #   padding: 1
     #   stride: 2
     #   blocks: 2
-  fc: 256

@@ -113,7 +113,7 @@ class ResNet18(nn.Module):
 
         self.layers = nn.Sequential(*layers)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(model_config.fc, n_classes)
+        self.fc = nn.Linear(model_config.layers[-1].out_channels, n_classes)
 
     def forward(self, x):
         x = self.stem(x)
