@@ -39,6 +39,8 @@ class TrainingConfig:
     weight_decay: float
     early_stopping: bool
 
+    use_profiler: bool = False
+
 
 @dataclass
 class DataAugmentationConfig:

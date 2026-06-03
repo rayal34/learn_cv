@@ -16,6 +16,7 @@ dependencies = [
     "polars>=1.40.1",
     "tensorboard>=2.20.0",
     "torch>=2.11.0",
+    "torch-tb-profiler>=0.4.3",
     "torchsummary>=1.5.1",
     "torchvision>=0.26.0",
 ]

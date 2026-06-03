@@ -92,6 +92,11 @@ def main(config_path: str):
     else:
         train_loop_fn = train_utils.train_loop
 
+    if exp_config.training.use_profiler:
+        profiler_dir = f"{data_config.experiment_path}/{exp_config.name}/profile"
+    else:
+        profiler_dir = None
+
     model = train_utils.train_many_epochs(
         epochs=train_config.num_epochs,
         train_dataloader=train_dataloader,
@@ -105,6 +110,7 @@ def main(config_path: str):
         early_stopping=early_stopping,
         writer=writer,
         train_loop_fn=train_loop_fn,
+        profiler_dir=profiler_dir,
     )
 
     if writer is not None:

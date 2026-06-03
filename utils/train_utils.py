@@ -1,3 +1,4 @@
+import contextlib
 import os
 import random
 from datetime import datetime
@@ -78,21 +79,45 @@ def train_loop(
     loss_fn,
     optimizer,
     device: torch.device,
+    profiler_dir: str | None = None,
 ):
     model.to(device)
     model.train()
     total_loss, correct = 0, 0
     n_samples = len(dataloader.dataset)  # type: ignore
-    for X, y in dataloader:
-        X, y = X.to(device), y.to(device)
-        logits = model(X)
-        loss = loss_fn(logits, y)
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        total_loss += loss.item()
-        correct += compute_accuracy(logits, y)
+    if profiler_dir is not None:
+        activities = [torch.profiler.ProfilerActivity.CPU]
+        if device.type == "cuda":
+            activities.append(torch.profiler.ProfilerActivity.CUDA)
+
+        prof_ctx = torch.profiler.profile(
+            activities=activities,
+            schedule=torch.profiler.schedule(wait=2, warmup=2, active=5, repeat=1),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler(profiler_dir),
+            record_shapes=True,
+            profile_memory=True,
+            with_stack=True,
+        )
+    else:
+        prof_ctx = contextlib.nullcontext()
+
+    with prof_ctx as prof:
+        for step, (X, y) in enumerate(dataloader):
+            X, y = X.to(device), y.to(device)
+            logits = model(X)
+            loss = loss_fn(logits, y)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+            correct += compute_accuracy(logits, y)
+
+            if profiler_dir is not None:
+                prof.step()  # type: ignore
+                if step > 10:
+                    break
 
     total_loss /= n_samples
     accuracy = correct / n_samples
@@ -108,22 +133,47 @@ def train_loop_with_mixup(
     device: torch.device,
     alpha: float,
     num_classes: int,
+    profiler_dir: str | None = None,
 ):
     model.to(device)
     model.train()
     total_loss, correct = 0, 0
     n_samples = len(dataloader.dataset)  # type: ignore
-    for X, y in dataloader:
-        X, y = X.to(device), y.to(device)
-        X_mix, y_mix = mixup(X, y, alpha=alpha, num_classes=num_classes, device=device)
-        logits = model(X_mix)
-        loss = loss_fn(logits, y_mix)
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        total_loss += loss.item()
-        correct += compute_accuracy(logits, y)
+    if profiler_dir is not None:
+        activities = [torch.profiler.ProfilerActivity.CPU]
+        if device.type == "cuda":
+            activities.append(torch.profiler.ProfilerActivity.CUDA)
+        prof_ctx = torch.profiler.profile(
+            activities=activities,
+            schedule=torch.profiler.schedule(wait=2, warmup=2, active=5, repeat=1),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler("../"),
+            record_shapes=True,
+            profile_memory=True,
+            with_stack=True,
+        )
+    else:
+        prof_ctx = contextlib.nullcontext()
+
+    with prof_ctx as prof:
+        for step, (X, y) in enumerate(dataloader):
+            X, y = X.to(device), y.to(device)
+            X_mix, y_mix = mixup(
+                X, y, alpha=alpha, num_classes=num_classes, device=device
+            )
+            logits = model(X_mix)
+            loss = loss_fn(logits, y_mix)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+            correct += compute_accuracy(logits, y)
+
+            if profiler_dir is not None:
+                prof.step()  # type: ignore
+                if step > 10:
+                    break
 
     total_loss /= n_samples
     accuracy = correct / n_samples
@@ -161,9 +211,10 @@ def train_one_epoch(
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
     train_loop_fn: Callable = train_loop,
+    profiler_dir: str | None = None,
 ):
     train_loss, train_acc, train_update_scales = train_loop_fn(
-        train_dataloader, model, train_loss_fn, optimizer, device
+        train_dataloader, model, train_loss_fn, optimizer, device, profiler_dir
     )
     current_lr = optimizer.param_groups[0]["lr"]
     test_loss, test_acc = eval_loop(test_dataloader, model, device, eval_loss_fn)
@@ -185,6 +236,7 @@ def train_many_epochs(
     early_stopping: EarlyStoppingWithCheckpoint | None = None,
     writer: SummaryWriter | None = None,
     train_loop_fn: Callable = train_loop,
+    profiler_dir: str | None = None,
 ) -> nn.Module:
 
     for epoch in range(epochs):
@@ -205,6 +257,7 @@ def train_many_epochs(
             optimizer=optimizer,
             scheduler=scheduler,
             train_loop_fn=train_loop_fn,
+            profiler_dir=profiler_dir,
         )
 
         print(
