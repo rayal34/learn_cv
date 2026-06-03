@@ -15,19 +15,87 @@ from utils import loss_functions, train_utils
 from cifar import constants, load_data
 
 
-def main(config_path: str):
+def run_profiler(
+    train_dataloader,
+    test_dataloader,
+    model,
+    train_loss_fn,
+    eval_loss_fn,
+    device,
+    optimizer,
+    scheduler,
+    train_loop_fn,
+    profiler_dir,
+    num_epochs=5,
+):
+
+    train_utils.train_many_epochs(
+        epochs=num_epochs,
+        train_dataloader=train_dataloader,
+        test_dataloader=test_dataloader,
+        model=model,
+        train_loss_fn=train_loss_fn,
+        eval_loss_fn=eval_loss_fn,
+        device=device,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        early_stopping=None,
+        writer=None,
+        train_loop_fn=train_loop_fn,
+        profiler_dir=profiler_dir,
+    )
+
+
+def run_training(
+    exp_config,
+    train_config,
+    data_config,
+    model,
+    train_dataloader,
+    test_dataloader,
+    train_loss_fn,
+    eval_loss_fn,
+    device,
+    optimizer,
+    scheduler,
+    early_stopping,
+    writer,
+    train_loop_fn,
+):
+    model = train_utils.train_many_epochs(
+        epochs=train_config.num_epochs,
+        train_dataloader=train_dataloader,
+        test_dataloader=test_dataloader,
+        model=model,
+        train_loss_fn=train_loss_fn,
+        eval_loss_fn=eval_loss_fn,
+        device=device,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        early_stopping=early_stopping,
+        writer=writer,
+        train_loop_fn=train_loop_fn,
+    )
+
+    if writer is not None:
+        writer.close()
+
+    if not train_config.early_stopping:
+        train_utils.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
+
+
+def main(config_path: str, profile: bool = False):
     base_config = OmegaConf.structured(config.ExperimentConfig)
     yaml_config = OmegaConf.load(config_path)
 
     exp_config = cast(
         config.ExperimentConfig, OmegaConf.merge(base_config, yaml_config)
     )
+    train_utils.seed_everything(exp_config.seed)
 
     train_config = exp_config.training
     data_config = exp_config.dataset
     model_config = exp_config.model
-
-    train_utils.seed_everything(exp_config.seed)
 
     train_dataloader, test_dataloader = load_data.get_dataloaders(exp_config)
 
@@ -93,32 +161,38 @@ def main(config_path: str):
 
     eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
-    if exp_config.training.use_profiler:
+    if profile:
         profiler_dir = f"{data_config.experiment_path}/{exp_config.name}/profile"
+        run_profiler(
+            train_dataloader,
+            test_dataloader,
+            model,
+            train_loss_fn,
+            eval_loss_fn,
+            device,
+            optimizer,
+            scheduler,
+            train_loop_fn,
+            profiler_dir,
+            num_epochs=5,
+        )
     else:
-        profiler_dir = None
-
-    model = train_utils.train_many_epochs(
-        epochs=train_config.num_epochs,
-        train_dataloader=train_dataloader,
-        test_dataloader=test_dataloader,
-        model=model,
-        train_loss_fn=train_loss_fn,
-        eval_loss_fn=eval_loss_fn,
-        device=device,
-        optimizer=optimizer,
-        scheduler=scheduler,
-        early_stopping=early_stopping,
-        writer=writer,
-        train_loop_fn=train_loop_fn,
-        profiler_dir=profiler_dir,
-    )
-
-    if writer is not None:
-        writer.close()
-
-    if not train_config.early_stopping:
-        train_utils.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
+        run_training(
+            exp_config,
+            train_config,
+            data_config,
+            model,
+            train_dataloader,
+            test_dataloader,
+            train_loss_fn,
+            eval_loss_fn,
+            device,
+            optimizer,
+            scheduler,
+            early_stopping,
+            writer,
+            train_loop_fn,
+        )
 
 
 if __name__ == "__main__":
@@ -130,6 +204,12 @@ if __name__ == "__main__":
         default=os.path.join(os.path.dirname(__file__), "experiment.yaml"),
     )
 
+    parser.add_argument(
+        "--profile",
+        type=bool,
+        default=False,
+    )
+
     args = parser.parse_args()
 
-    main(config_path=args.config)
+    main(config_path=args.config, profile=args.profile)

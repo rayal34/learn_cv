@@ -22,7 +22,6 @@ training:
   weight_decay: 0.005
 
   early_stopping: true
-  use_profiler: true
 
 model:
   stem:
