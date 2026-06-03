@@ -9,6 +9,7 @@ from models.resnet import ResNet18
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 from utils import train_utils
+from utils.loss_functions import SoftCrossEntropyLoss
 
 from cifar import config, constants, load_data
 
@@ -142,7 +143,7 @@ def main(config_path: str, profile: bool = False):
             config_dict = exp_config.to_dict()
         writer.add_text("Config", json.dumps(config_dict))
 
-    train_loss_fn = nn.CrossEntropyLoss(reduction="sum")
+    train_loss_fn = SoftCrossEntropyLoss(reduction="sum")
     eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
     if profile:

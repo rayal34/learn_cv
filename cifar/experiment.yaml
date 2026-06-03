@@ -18,11 +18,11 @@ data_augmentations:
 training:
   learning_rate: 0.005
   batch_size: 256
-  early_stopping_patience: 20
+  early_stopping_patience: 30
   scheduler_patience: 5
-  scheduler_factor: 0.5
-  num_epochs: 200
-  weight_decay: 0.005
+  scheduler_factor: 0.25
+  num_epochs: 500
+  weight_decay: 0.002
 
   early_stopping: true
 
