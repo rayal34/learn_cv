@@ -147,7 +147,7 @@ def train_loop_with_mixup(
         prof_ctx = torch.profiler.profile(
             activities=activities,
             schedule=torch.profiler.schedule(wait=2, warmup=2, active=5, repeat=1),
-            on_trace_ready=torch.profiler.tensorboard_trace_handler("../"),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler(profiler_dir),
             record_shapes=True,
             profile_memory=True,
             with_stack=True,
