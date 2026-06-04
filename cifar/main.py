@@ -12,6 +12,7 @@ from utils import train_utils
 from utils.loss_functions import SoftCrossEntropyLoss
 
 from cifar import config, constants, load_data
+from cifar.utils import get_optimizer_and_scheduler
 
 
 def run_profiler(
@@ -114,7 +115,7 @@ def main(config_path: str, profile: bool = False):
         ),
     )
 
-    optimizer, scheduler = train_utils.get_optimizer_and_scheduler(
+    optimizer, scheduler = get_optimizer_and_scheduler(
         model=model,
         learning_rate=train_config.learning_rate,
         weight_decay=train_config.weight_decay,

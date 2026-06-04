@@ -11,6 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 from utils import train_utils
 
 from mnist import config, constants, load_data
+from mnist.utils import get_optimizer_and_scheduler
 
 
 def main(config_path: str):
@@ -40,14 +41,13 @@ def main(config_path: str):
             constants.INPUT_WIDTH,
         ),
     )
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=train_config.learning_rate, weight_decay=1e-4
-    )
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        mode="min",
-        patience=train_config.scheduler_patience,
-        factor=train_config.scheduler_factor,
+
+    optimizer, scheduler = get_optimizer_and_scheduler(
+        model=model,
+        learning_rate=train_config.learning_rate,
+        weight_decay=train_config.weight_decay,
+        scheduler_patience=train_config.scheduler_patience,
+        scheduler_factor=train_config.scheduler_factor,
     )
     train_loss_fn = nn.CrossEntropyLoss(reduction="sum")
     eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")

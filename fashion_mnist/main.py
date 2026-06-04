@@ -11,6 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 from utils import train_utils
 
 from fashion_mnist import config, constants, load_data
+from fashion_mnist.utils import get_optimizer_and_scheduler
 
 
 def main(config_path: str):
@@ -49,7 +50,7 @@ def main(config_path: str):
         ),
     )
 
-    optimizer, scheduler = train_utils.get_optimizer_and_scheduler(
+    optimizer, scheduler = get_optimizer_and_scheduler(
         model=model,
         learning_rate=train_config.learning_rate,
         weight_decay=train_config.weight_decay,

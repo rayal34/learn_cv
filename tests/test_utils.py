@@ -13,7 +13,6 @@ from utils.train_utils import (
     compute_accuracy,
     eval_loop,
     generate_default_exp_name,
-    get_optimizer_and_scheduler,
     save_model,
     seed_everything,
     train_loop,
@@ -172,21 +171,6 @@ def test_seed_everything():
     seed_everything(123)
     val2 = torch.randn(5)
     assert torch.equal(val1, val2)
-
-
-def test_get_optimizer_and_scheduler():
-    model = nn.Linear(5, 2)
-    optimizer, scheduler = get_optimizer_and_scheduler(
-        model=model,
-        learning_rate=0.01,
-        weight_decay=1e-4,
-        scheduler_patience=2,
-        scheduler_factor=0.5,
-    )
-    assert isinstance(optimizer, torch.optim.Adam)
-    assert isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau)
-    assert scheduler.patience == 2
-    assert scheduler.factor == 0.5
 
 
 def test_save_model(tmp_path):
