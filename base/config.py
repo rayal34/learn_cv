@@ -28,9 +28,15 @@ class TrainingConfig:
     learning_rate: float
     batch_size: int
     early_stopping_patience: int
-    scheduler_patience: int
-    scheduler_factor: float
     num_epochs: int
 
     weight_decay: float
     early_stopping: bool
+
+    scheduler_update_freq: str = "epoch"
+
+
+@dataclass
+class SchedulerConfig:
+    type: str
+    params: dict

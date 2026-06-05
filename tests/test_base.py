@@ -31,8 +31,6 @@ def test_training_config():
         learning_rate=0.001,
         batch_size=64,
         early_stopping_patience=5,
-        scheduler_patience=2,
-        scheduler_factor=0.5,
         num_epochs=10,
         weight_decay=1e-4,
         early_stopping=True,

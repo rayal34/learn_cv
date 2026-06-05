@@ -24,6 +24,7 @@ def run_profiler(
     device,
     optimizer,
     scheduler,
+    scheduler_update_freq,
     profiler_dir,
     num_epochs=5,
 ):
@@ -38,6 +39,7 @@ def run_profiler(
         device=device,
         optimizer=optimizer,
         scheduler=scheduler,
+        scheduler_update_freq=scheduler_update_freq,
         early_stopping=None,
         writer=None,
         profiler_dir=profiler_dir,
@@ -56,6 +58,7 @@ def run_training(
     device,
     optimizer,
     scheduler,
+    scheduler_update_freq,
     early_stopping,
     writer,
 ):
@@ -69,6 +72,7 @@ def run_training(
         device=device,
         optimizer=optimizer,
         scheduler=scheduler,
+        scheduler_update_freq=scheduler_update_freq,
         early_stopping=early_stopping,
         writer=writer,
     )
@@ -119,8 +123,8 @@ def main(config_path: str, profile: bool = False):
         model=model,
         learning_rate=train_config.learning_rate,
         weight_decay=train_config.weight_decay,
-        scheduler_patience=train_config.scheduler_patience,
-        scheduler_factor=train_config.scheduler_factor,
+        exp_config=exp_config,
+        train_dataloader=train_dataloader,
     )
 
     if train_config.early_stopping:
@@ -158,6 +162,7 @@ def main(config_path: str, profile: bool = False):
             device,
             optimizer,
             scheduler,
+            train_config.scheduler_update_freq,
             profiler_dir,
             num_epochs=5,
         )
@@ -174,6 +179,7 @@ def main(config_path: str, profile: bool = False):
             device,
             optimizer,
             scheduler,
+            train_config.scheduler_update_freq,
             early_stopping,
             writer,
         )

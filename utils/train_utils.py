@@ -2,6 +2,7 @@ import contextlib
 import os
 import random
 from datetime import datetime
+from typing import Literal
 
 import numpy as np
 import torch
@@ -75,10 +76,11 @@ def compute_update_scale(
 
 def train_loop(
     dataloader: DataLoader,
-    model,
-    loss_fn,
-    optimizer,
+    model: torch.nn.Module,
+    loss_fn: torch.nn.Module,
     device: torch.device,
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
     profiler_dir: str | None = None,
 ):
     model.to(device)
@@ -111,6 +113,8 @@ def train_loop(
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            if scheduler is not None:
+                scheduler.step()
             total_loss += loss.item()
             correct += compute_accuracy(logits, y)
 
@@ -154,19 +158,22 @@ def train_one_epoch(
     device: torch.device,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
+    scheduler_update_freq: Literal["step", "epoch"] = "epoch",
     profiler_dir: str | None = None,
 ):
+
     train_loss, train_acc, train_update_scales = train_loop(
         dataloader=train_dataloader,
         model=model,
         loss_fn=train_loss_fn,
-        optimizer=optimizer,
         device=device,
+        optimizer=optimizer,
+        scheduler=scheduler if scheduler_update_freq == "step" else None,
         profiler_dir=profiler_dir,
     )
     current_lr = optimizer.param_groups[0]["lr"]
     test_loss, test_acc = eval_loop(test_dataloader, model, device, eval_loss_fn)
-    if scheduler:
+    if scheduler and scheduler_update_freq == "epoch":
         scheduler.step(test_loss)
     return train_loss, train_acc, train_update_scales, current_lr, test_loss, test_acc
 
@@ -181,6 +188,7 @@ def train_many_epochs(
     device: torch.device,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
+    scheduler_update_freq: Literal["step", "epoch"] = "epoch",
     early_stopping: EarlyStoppingWithCheckpoint | None = None,
     writer: SummaryWriter | None = None,
     profiler_dir: str | None = None,
@@ -203,6 +211,7 @@ def train_many_epochs(
             device=device,
             optimizer=optimizer,
             scheduler=scheduler,
+            scheduler_update_freq=scheduler_update_freq,
             profiler_dir=profiler_dir,
         )
 

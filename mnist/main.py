@@ -46,8 +46,7 @@ def main(config_path: str):
         model=model,
         learning_rate=train_config.learning_rate,
         weight_decay=train_config.weight_decay,
-        scheduler_patience=train_config.scheduler_patience,
-        scheduler_factor=train_config.scheduler_factor,
+        exp_config=exp_config,
     )
     train_loss_fn = nn.CrossEntropyLoss(reduction="sum")
     eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")

@@ -8,6 +8,7 @@ from fashion_mnist.config import (
     DataAugmentationConfig,
     DataConfig,
     ExperimentConfig,
+    SchedulerConfig,
     TrainingConfig,
 )
 from fashion_mnist.load_data import (
@@ -47,11 +48,17 @@ def test_experiment_config_to_dict():
         learning_rate=0.001,
         batch_size=32,
         early_stopping_patience=3,
-        scheduler_patience=1,
-        scheduler_factor=0.1,
         num_epochs=5,
         weight_decay=1e-5,
         early_stopping=False,
+    )
+
+    scheduler_cfg = SchedulerConfig(
+        type="ReduceLROnPlateau",
+        params={
+            "patience": 2,
+            "factor": 0.5,
+        },
     )
 
     exp_cfg = ExperimentConfig(
@@ -59,6 +66,7 @@ def test_experiment_config_to_dict():
         seed=123,
         dataset=dataset_cfg,
         training=training_cfg,
+        scheduler=scheduler_cfg,
         model=SimpleCNNModelConfig(),
     )
 
@@ -172,8 +180,6 @@ def test_get_dataloaders(mock_load_dataset):
         learning_rate=0.01,
         batch_size=4,
         early_stopping_patience=2,
-        scheduler_patience=1,
-        scheduler_factor=0.5,
         num_epochs=2,
         weight_decay=1e-4,
         early_stopping=False,
@@ -218,14 +224,17 @@ def test_fashion_mnist_main(
     mock_exp.seed = 42
     mock_exp.training.learning_rate = 0.001
     mock_exp.training.weight_decay = 1e-4
-    mock_exp.training.scheduler_patience = 2
-    mock_exp.training.scheduler_factor = 0.5
     mock_exp.training.early_stopping = True
     mock_exp.training.early_stopping_patience = 3
     mock_exp.training.num_epochs = 2
     mock_exp.dataset.root = str(tmp_path)
     mock_exp.dataset.experiment_path = str(tmp_path / "experiments")
     mock_exp.dataset.model_path = str(tmp_path / "models")
+    mock_exp.scheduler.type = "ReduceLROnPlateau"
+    mock_exp.scheduler.params = {
+        "patience": 2,
+        "factor": 0.5,
+    }
     mock_exp.dry_run = False
 
     # Small architecture

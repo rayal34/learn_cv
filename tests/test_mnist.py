@@ -2,7 +2,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 import torch
 import yaml
-from mnist.config import DataConfig, ExperimentConfig, TrainingConfig
+from mnist.config import DataConfig, ExperimentConfig, SchedulerConfig, TrainingConfig
 from mnist.load_data import get_dataloaders, load_test_data, load_training_data
 from mnist.main import main
 from models.config import SimpleCNNModelConfig
@@ -26,18 +26,24 @@ def test_mnist_experiment_config_to_dict():
         learning_rate=0.002,
         batch_size=128,
         early_stopping_patience=4,
-        scheduler_patience=2,
-        scheduler_factor=0.2,
         num_epochs=3,
         weight_decay=1e-5,
         early_stopping=True,
     )
 
+    scheduler_cfg = SchedulerConfig(
+        type="ReduceLROnPlateau",
+        params={
+            "patience": 2,
+            "factor": 0.5,
+        },
+    )
     exp_cfg = ExperimentConfig(
         name="test_mnist_exp",
         seed=42,
         dataset=dataset_cfg,
         training=training_cfg,
+        scheduler=scheduler_cfg,
         model=SimpleCNNModelConfig(),
     )
 
@@ -93,8 +99,6 @@ def test_get_dataloaders_mnist(mock_load_test, mock_load_train):
         learning_rate=0.002,
         batch_size=4,
         early_stopping_patience=4,
-        scheduler_patience=2,
-        scheduler_factor=0.2,
         num_epochs=3,
         weight_decay=1e-5,
         early_stopping=True,
@@ -140,13 +144,16 @@ def test_mnist_main(
     mock_exp.seed = 100
     mock_exp.training.learning_rate = 0.001
     mock_exp.training.weight_decay = 1e-4
-    mock_exp.training.scheduler_patience = 2
-    mock_exp.training.scheduler_factor = 0.5
     mock_exp.training.early_stopping = False
     mock_exp.training.num_epochs = 1
     mock_exp.dataset.root = str(tmp_path)
     mock_exp.dataset.experiment_path = str(tmp_path / "experiments")
     mock_exp.dataset.model_path = str(tmp_path / "models")
+    mock_exp.scheduler.type = "ReduceLROnPlateau"
+    mock_exp.scheduler.params = {
+        "patience": 2,
+        "factor": 0.5,
+    }
     mock_exp.dry_run = False
 
     mock_exp.model.conv_layers = []
