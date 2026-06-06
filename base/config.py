@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -37,6 +38,6 @@ class TrainingConfig:
 
 
 @dataclass
-class SchedulerConfig:
+class OptimizerSchedulerConfig:
     type: str
-    params: dict
+    params: dict[str, Any]

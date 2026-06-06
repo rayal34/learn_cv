@@ -8,7 +8,7 @@ from fashion_mnist.config import (
     DataAugmentationConfig,
     DataConfig,
     ExperimentConfig,
-    SchedulerConfig,
+    OptimizerSchedulerConfig,
     TrainingConfig,
 )
 from fashion_mnist.load_data import (
@@ -53,11 +53,19 @@ def test_experiment_config_to_dict():
         early_stopping=False,
     )
 
-    scheduler_cfg = SchedulerConfig(
+    scheduler_cfg = OptimizerSchedulerConfig(
         type="ReduceLROnPlateau",
         params={
             "patience": 2,
             "factor": 0.5,
+        },
+    )
+
+    optimizer_cfg = OptimizerSchedulerConfig(
+        type="AdamW",
+        params={
+            "lr": 0.001,
+            "weight_decay": 1e-5,
         },
     )
 
@@ -66,6 +74,7 @@ def test_experiment_config_to_dict():
         seed=123,
         dataset=dataset_cfg,
         training=training_cfg,
+        optimizer=optimizer_cfg,
         scheduler=scheduler_cfg,
         model=SimpleCNNModelConfig(),
     )
@@ -234,6 +243,11 @@ def test_fashion_mnist_main(
     mock_exp.scheduler.params = {
         "patience": 2,
         "factor": 0.5,
+    }
+    mock_exp.optimizer.type = "AdamW"
+    mock_exp.optimizer.params = {
+        "lr": 0.001,
+        "weight_decay": 1e-4,
     }
     mock_exp.dry_run = False
 

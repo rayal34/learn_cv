@@ -9,7 +9,6 @@ dataset:
   test_labels_filename: "t10k-labels-idx1-ubyte.gz"
 
 training:
-  learning_rate: 0.001
   batch_size: 256
   early_stopping_patience: 20
   num_epochs: 100
@@ -21,6 +20,12 @@ scheduler:
   params:
     patience: 5
     factor: 0.5
+
+optimizer:
+  type: AdamW
+  params:
+    lr: 1e-3
+    weight_decay: 1e-3
 
 model:
   dropout: 0.5

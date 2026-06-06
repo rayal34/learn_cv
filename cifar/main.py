@@ -121,8 +121,6 @@ def main(config_path: str, profile: bool = False):
 
     optimizer, scheduler = get_optimizer_and_scheduler(
         model=model,
-        learning_rate=train_config.learning_rate,
-        weight_decay=train_config.weight_decay,
         exp_config=exp_config,
         train_dataloader=train_dataloader,
     )

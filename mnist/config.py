@@ -1,7 +1,7 @@
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from base.config import DataConfig, SchedulerConfig, TrainingConfig
+from base.config import DataConfig, OptimizerSchedulerConfig, TrainingConfig
 from omegaconf import MISSING
 from utils import train_utils
 
@@ -26,7 +26,8 @@ class ExperimentConfig:
     )
     training: TrainingConfig = MISSING
     model: Any = MISSING
-    scheduler: SchedulerConfig = MISSING
+    scheduler: OptimizerSchedulerConfig = MISSING
+    optimizer: OptimizerSchedulerConfig = MISSING
 
     def to_dict(self) -> dict:
 
@@ -39,4 +40,5 @@ class ExperimentConfig:
             "data_augmentations": asdict(self.data_augmentations),
             "model": asdict(self.model),
             "scheduler": asdict(self.scheduler),
+            "optimizer": asdict(self.optimizer),
         }

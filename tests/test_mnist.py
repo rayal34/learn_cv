@@ -2,7 +2,12 @@ from unittest.mock import ANY, MagicMock, patch
 
 import torch
 import yaml
-from mnist.config import DataConfig, ExperimentConfig, SchedulerConfig, TrainingConfig
+from mnist.config import (
+    DataConfig,
+    ExperimentConfig,
+    OptimizerSchedulerConfig,
+    TrainingConfig,
+)
 from mnist.load_data import get_dataloaders, load_test_data, load_training_data
 from mnist.main import main
 from models.config import SimpleCNNModelConfig
@@ -31,18 +36,28 @@ def test_mnist_experiment_config_to_dict():
         early_stopping=True,
     )
 
-    scheduler_cfg = SchedulerConfig(
+    scheduler_cfg = OptimizerSchedulerConfig(
         type="ReduceLROnPlateau",
         params={
             "patience": 2,
             "factor": 0.5,
         },
     )
+
+    optimizer_cfg = OptimizerSchedulerConfig(
+        type="AdamW",
+        params={
+            "lr": 0.001,
+            "weight_decay": 1e-4,
+        },
+    )
+
     exp_cfg = ExperimentConfig(
         name="test_mnist_exp",
         seed=42,
         dataset=dataset_cfg,
         training=training_cfg,
+        optimizer=optimizer_cfg,
         scheduler=scheduler_cfg,
         model=SimpleCNNModelConfig(),
     )
@@ -153,6 +168,11 @@ def test_mnist_main(
     mock_exp.scheduler.params = {
         "patience": 2,
         "factor": 0.5,
+    }
+    mock_exp.optimizer.type = "AdamW"
+    mock_exp.optimizer.params = {
+        "lr": 0.001,
+        "weight_decay": 1e-4,
     }
     mock_exp.dry_run = False
 

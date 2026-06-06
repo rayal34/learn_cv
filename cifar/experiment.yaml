@@ -16,11 +16,9 @@ data_augmentations:
   mixup_alpha: 0.2
 
 training:
-  learning_rate: 1e-3
   batch_size: 256
   early_stopping_patience: 30
   num_epochs: 200
-  weight_decay: 1e-2
 
   early_stopping: true
 
@@ -31,6 +29,12 @@ scheduler:
   params:
     max_lr: 1e-2
     pct_start: 0.1
+
+optimizer:
+  type: AdamW
+  params:
+    lr: 1e-3
+    weight_decay: 1e-2
 
 model:
   stem:
