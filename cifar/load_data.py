@@ -4,16 +4,15 @@ import pickle as pk
 import torch
 from torch.utils.data import DataLoader, Dataset, default_collate
 from torchvision.transforms import v2
-from utils.augmentation_utils import ZeroOneScale
 
 from cifar import config, constants
 
 
 class Cifar100Dataset(Dataset):
     def __init__(self, imgs, labels, label_int_mapping, transforms=None):
-        self.imgs = torch.tensor(imgs, dtype=torch.float32)
+        self.imgs = torch.from_numpy(imgs)
 
-        int_labels = [label_int_mapping[l] for l in labels]
+        int_labels = [label_int_mapping[label] for label in labels]
         self.labels = torch.tensor(int_labels, dtype=torch.long)
         self.transforms = transforms
 
@@ -72,52 +71,47 @@ def load_dataset(
     return Cifar100Dataset(imgs, labels, label_int_mapping, transforms)
 
 
+def get_train_transforms(config: config.DataAugmentationConfig):
+    return [getattr(v2, aug.type)(**aug.params) for aug in config.dataset_augmentations]
+
+
+def get_general_transforms():
+    transforms = [
+        v2.ToDtype(torch.float32, scale=True),
+        v2.Normalize(mean=constants.MEANS, std=constants.STDS),
+    ]
+    return transforms
+
+
 def get_dataloaders(config: config.ExperimentConfig):
 
+    train_transforms = get_train_transforms(config.train_augmentations)
+    general_transforms = get_general_transforms()
+    all_transforms = train_transforms + general_transforms
     train_data = load_dataset(
         config.dataset,
         train=True,
         dry_run=config.dry_run,
-        transforms=v2.Compose(
-            [
-                v2.RandomHorizontalFlip(config.data_augmentations.h_flip_prob),
-                v2.RandomRotation(degrees=config.data_augmentations.rotate_range),
-                v2.RandomCrop(
-                    constants.INPUT_HEIGHT,
-                    padding=config.data_augmentations.crop_padding,
-                    padding_mode="reflect",
-                ),
-                ZeroOneScale(
-                    min_val=constants.MIN_PIXEL_VALUE, max_val=constants.MAX_PIXEL_VALUE
-                ),
-                v2.Normalize(mean=constants.MEANS, std=constants.STDS),
-            ]
-        ),
+        transforms=v2.Compose(all_transforms),
     )
 
     test_data = load_dataset(
         config.dataset,
         train=False,
-        transforms=v2.Compose(
-            [
-                ZeroOneScale(
-                    min_val=constants.MIN_PIXEL_VALUE, max_val=constants.MAX_PIXEL_VALUE
-                ),
-                v2.Normalize(mean=constants.MEANS, std=constants.STDS),
-            ]
-        ),
+        transforms=v2.Compose(general_transforms),
     )
 
-    cutmix = v2.CutMix(
-        alpha=config.data_augmentations.mixup_alpha, num_classes=constants.NUM_CLASSES
-    )
-    mixup = v2.MixUp(
-        alpha=config.data_augmentations.mixup_alpha, num_classes=constants.NUM_CLASSES
-    )
-    cutmix_or_mixup = v2.RandomChoice([cutmix, mixup])
+    if config.train_augmentations.dataloader_augmentations is not None:
+        transforms = [
+            getattr(v2, aug.type)(**aug.params)
+            for aug in config.train_augmentations.dataloader_augmentations
+        ]
+        dataloader_transforms = v2.RandomChoice(transforms)
 
-    def collate_fn(batch):
-        return cutmix_or_mixup(*default_collate(batch))
+        def collate_fn(batch):
+            return dataloader_transforms(*default_collate(batch))
+    else:
+        collate_fn = None
 
     train_dataloader = DataLoader(
         train_data,

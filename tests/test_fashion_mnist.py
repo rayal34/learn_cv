@@ -8,7 +8,7 @@ from fashion_mnist.config import (
     DataAugmentationConfig,
     DataConfig,
     ExperimentConfig,
-    OptimizerSchedulerConfig,
+    GenericConfig,
     TrainingConfig,
 )
 from fashion_mnist.load_data import (
@@ -53,7 +53,7 @@ def test_experiment_config_to_dict():
         early_stopping=False,
     )
 
-    scheduler_cfg = OptimizerSchedulerConfig(
+    scheduler_cfg = GenericConfig(
         type="ReduceLROnPlateau",
         params={
             "patience": 2,
@@ -61,7 +61,7 @@ def test_experiment_config_to_dict():
         },
     )
 
-    optimizer_cfg = OptimizerSchedulerConfig(
+    optimizer_cfg = GenericConfig(
         type="AdamW",
         params={
             "lr": 0.001,

@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 
 @dataclass
@@ -38,6 +38,12 @@ class TrainingConfig:
 
 
 @dataclass
-class OptimizerSchedulerConfig:
+class GenericConfig:
     type: str
     params: dict[str, Any]
+
+
+@dataclass
+class DataAugmentationConfig:
+    dataset_augmentations: list[GenericConfig]
+    dataloader_augmentations: Optional[list[GenericConfig]]

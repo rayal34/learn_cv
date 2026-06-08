@@ -6,14 +6,28 @@ dataset:
   num_workers: 0
   pin_memory: false
 
-data_augmentations:
-  h_flip_prob: 0.5
-
-  rotate_range: [-5.0, 5.0]
-
-  crop_padding: 2
-
-  mixup_alpha: 0.2
+train_augmentations:
+  dataset_augmentations:
+    - type: RandomHorizontalFlip
+      params:
+        p: 0.5
+    - type: RandomRotation
+      params:
+        degrees: [-5.0, 5.0]
+    - type: RandomCrop
+      params:
+        size: 32
+        padding: 2
+        padding_mode: "reflect"
+  dataloader_augmentations:
+    - type: CutMix
+      params:
+        alpha: 0.2
+        num_classes: 100
+    - type: MixUp
+      params:
+        alpha: 0.2
+        num_classes: 100
 
 training:
   batch_size: 256

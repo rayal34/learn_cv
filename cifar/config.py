@@ -1,20 +1,14 @@
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from base.config import DataConfig, OptimizerSchedulerConfig, TrainingConfig
+from base.config import (
+    DataAugmentationConfig,
+    DataConfig,
+    GenericConfig,
+    TrainingConfig,
+)
 from omegaconf import MISSING
 from utils import train_utils
-
-
-@dataclass
-class DataAugmentationConfig:
-    h_flip_prob: float = 0.5
-
-    rotate_range: list[float] = field(default_factory=lambda: [-5.0, 5.0])
-
-    crop_padding: int = 2
-
-    mixup_alpha: float = 0.0
 
 
 @dataclass
@@ -23,15 +17,13 @@ class ExperimentConfig:
     seed: int = 42
     dry_run: bool = False
     dataset: DataConfig = MISSING
-    data_augmentations: DataAugmentationConfig = field(
-        default_factory=DataAugmentationConfig
-    )
+    train_augmentations: DataAugmentationConfig = MISSING
     training: TrainingConfig = MISSING
     model: Any = MISSING
 
-    scheduler: OptimizerSchedulerConfig = MISSING
+    scheduler: GenericConfig = MISSING
 
-    optimizer: OptimizerSchedulerConfig = MISSING
+    optimizer: GenericConfig = MISSING
 
     def to_dict(self) -> dict:
 
@@ -41,7 +33,7 @@ class ExperimentConfig:
             "dry_run": self.dry_run,
             "dataset": asdict(self.dataset),
             "training": asdict(self.training),
-            "data_augmentations": asdict(self.data_augmentations),
+            "train_augmentations": asdict(self.train_augmentations),
             "model": asdict(self.model),
             "scheduler": asdict(self.scheduler),
             "optimizer": asdict(self.optimizer),

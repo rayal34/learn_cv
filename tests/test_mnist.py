@@ -5,7 +5,7 @@ import yaml
 from mnist.config import (
     DataConfig,
     ExperimentConfig,
-    OptimizerSchedulerConfig,
+    GenericConfig,
     TrainingConfig,
 )
 from mnist.load_data import get_dataloaders, load_test_data, load_training_data
@@ -36,7 +36,7 @@ def test_mnist_experiment_config_to_dict():
         early_stopping=True,
     )
 
-    scheduler_cfg = OptimizerSchedulerConfig(
+    scheduler_cfg = GenericConfig(
         type="ReduceLROnPlateau",
         params={
             "patience": 2,
@@ -44,7 +44,7 @@ def test_mnist_experiment_config_to_dict():
         },
     )
 
-    optimizer_cfg = OptimizerSchedulerConfig(
+    optimizer_cfg = GenericConfig(
         type="AdamW",
         params={
             "lr": 0.001,
