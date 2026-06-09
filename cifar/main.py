@@ -15,75 +15,6 @@ from cifar import config, constants, load_data
 from cifar.utils import get_optimizer_and_scheduler
 
 
-def run_profiler(
-    train_dataloader,
-    test_dataloader,
-    model,
-    train_loss_fn,
-    eval_loss_fn,
-    device,
-    optimizer,
-    scheduler,
-    scheduler_update_freq,
-    profiler_dir,
-    num_epochs=5,
-):
-
-    train_utils.train_many_epochs(
-        epochs=num_epochs,
-        train_dataloader=train_dataloader,
-        test_dataloader=test_dataloader,
-        model=model,
-        train_loss_fn=train_loss_fn,
-        eval_loss_fn=eval_loss_fn,
-        device=device,
-        optimizer=optimizer,
-        scheduler=scheduler,
-        scheduler_update_freq=scheduler_update_freq,
-        early_stopping=None,
-        writer=None,
-        profiler_dir=profiler_dir,
-    )
-
-
-def run_training(
-    exp_config,
-    train_config,
-    data_config,
-    model,
-    train_dataloader,
-    test_dataloader,
-    train_loss_fn,
-    eval_loss_fn,
-    device,
-    optimizer,
-    scheduler,
-    scheduler_update_freq,
-    early_stopping,
-    writer,
-):
-    model = train_utils.train_many_epochs(
-        epochs=train_config.num_epochs,
-        train_dataloader=train_dataloader,
-        test_dataloader=test_dataloader,
-        model=model,
-        train_loss_fn=train_loss_fn,
-        eval_loss_fn=eval_loss_fn,
-        device=device,
-        optimizer=optimizer,
-        scheduler=scheduler,
-        scheduler_update_freq=scheduler_update_freq,
-        early_stopping=early_stopping,
-        writer=writer,
-    )
-
-    if writer is not None:
-        writer.close()
-
-    if not train_config.early_stopping:
-        train_utils.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
-
-
 def main(config_path: str, profile: bool = False):
     base_config = OmegaConf.structured(config.ExperimentConfig)
     yaml_config = OmegaConf.load(config_path)
@@ -151,38 +82,33 @@ def main(config_path: str, profile: bool = False):
     train_loss_fn = SoftCrossEntropyLoss(reduction="sum")
     eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
+    profiler_dir = None
+    num_epochs = train_config.num_epochs
     if profile:
         profiler_dir = f"{data_config.experiment_path}/{exp_config.name}/profile"
-        run_profiler(
-            train_dataloader,
-            test_dataloader,
-            model,
-            train_loss_fn,
-            eval_loss_fn,
-            device,
-            optimizer,
-            scheduler,
-            train_config.scheduler_update_freq,
-            profiler_dir,
-            num_epochs=5,
-        )
-    else:
-        run_training(
-            exp_config,
-            train_config,
-            data_config,
-            model,
-            train_dataloader,
-            test_dataloader,
-            train_loss_fn,
-            eval_loss_fn,
-            device,
-            optimizer,
-            scheduler,
-            train_config.scheduler_update_freq,
-            early_stopping,
-            writer,
-        )
+        num_epochs = 5
+
+    model = train_utils.train_many_epochs(
+        epochs=num_epochs,
+        train_dataloader=train_dataloader,
+        test_dataloader=test_dataloader,
+        model=model,
+        train_loss_fn=train_loss_fn,
+        eval_loss_fn=eval_loss_fn,
+        device=device,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        scheduler_update_freq=train_config.scheduler_update_freq,  # type: ignore
+        early_stopping=early_stopping if not profile else None,
+        writer=writer,
+        profiler_dir=profiler_dir,
+    )
+
+    if writer is not None:
+        writer.close()
+
+    if not profile and early_stopping is None:
+        train_utils.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
 
 
 if __name__ == "__main__":

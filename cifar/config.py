@@ -1,4 +1,5 @@
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from typing import Any
 
 from base.config import (
@@ -9,12 +10,13 @@ from base.config import (
     TrainingConfig,
 )
 from omegaconf import MISSING
-from utils import train_utils
 
 
 @dataclass
 class ExperimentConfig:
-    name: str = field(default_factory=lambda: train_utils.generate_default_exp_name())
+    name: str = field(
+        default_factory=lambda: datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    )
     seed: int = 42
     dry_run: bool = False
     dataset: DataConfig = MISSING

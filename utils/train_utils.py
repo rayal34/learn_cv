@@ -1,6 +1,7 @@
 import contextlib
 import os
 import random
+import time
 from datetime import datetime
 from typing import Literal
 
@@ -10,8 +11,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
-
-from utils import general_utils
 
 
 class EarlyStoppingWithCheckpoint:
@@ -148,36 +147,6 @@ def eval_loop(
     return test_loss, accuracy
 
 
-@general_utils.timer
-def train_one_epoch(
-    train_dataloader: DataLoader,
-    test_dataloader: DataLoader,
-    model: torch.nn.Module,
-    train_loss_fn: torch.nn.Module,
-    eval_loss_fn: torch.nn.Module,
-    device: torch.device,
-    optimizer: torch.optim.Optimizer,
-    scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
-    scheduler_update_freq: Literal["step", "epoch"] = "epoch",
-    profiler_dir: str | None = None,
-):
-
-    train_loss, train_acc, train_update_scales = train_loop(
-        dataloader=train_dataloader,
-        model=model,
-        loss_fn=train_loss_fn,
-        device=device,
-        optimizer=optimizer,
-        scheduler=scheduler if scheduler_update_freq == "step" else None,
-        profiler_dir=profiler_dir,
-    )
-    current_lr = optimizer.param_groups[0]["lr"]
-    test_loss, test_acc = eval_loop(test_dataloader, model, device, eval_loss_fn)
-    if scheduler and scheduler_update_freq == "epoch":
-        scheduler.step(test_loss)
-    return train_loss, train_acc, train_update_scales, current_lr, test_loss, test_acc
-
-
 def train_many_epochs(
     epochs: int,
     train_dataloader: DataLoader,
@@ -195,33 +164,36 @@ def train_many_epochs(
 ) -> nn.Module:
 
     for epoch in range(epochs):
-        (
-            train_loss,
-            train_acc,
-            train_update_scales,
-            current_lr,
-            test_loss,
-            test_acc,
-        ) = train_one_epoch(
-            train_dataloader=train_dataloader,
-            test_dataloader=test_dataloader,
+        start_time = time.perf_counter()
+
+        train_loss, train_acc, train_update_scales = train_loop(
+            dataloader=train_dataloader,
             model=model,
-            train_loss_fn=train_loss_fn,
-            eval_loss_fn=eval_loss_fn,
+            loss_fn=train_loss_fn,
             device=device,
             optimizer=optimizer,
-            scheduler=scheduler,
-            scheduler_update_freq=scheduler_update_freq,
+            scheduler=scheduler if scheduler_update_freq == "step" else None,
             profiler_dir=profiler_dir,
         )
+        current_lr = optimizer.param_groups[0]["lr"]
 
+        test_loss, test_acc = eval_loop(test_dataloader, model, device, eval_loss_fn)
+
+        if scheduler and scheduler_update_freq == "epoch":
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(test_loss)
+            else:
+                scheduler.step()
+
+        epoch_time = time.perf_counter() - start_time
         print(
             f"Epoch {epoch + 1}/{epochs}  | "
             f"train_loss: {train_loss:.4f}  |  "
             f"train_acc: {train_acc:.4f}  | "
-            f"current_lr: {current_lr:.4f}  |  "
+            f"current_lr: {current_lr:.6f}  |  "
             f"test_loss: {test_loss:.4f}  |  "
-            f"test_acc: {test_acc:.4f}"
+            f"test_acc: {test_acc:.4f}  |  "
+            f"time: {epoch_time:.1f}s"
         )
 
         if writer:
