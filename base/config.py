@@ -47,3 +47,10 @@ class GenericConfig:
 class DataAugmentationConfig:
     dataset_augmentations: list[GenericConfig]
     dataloader_augmentations: Optional[list[GenericConfig]]
+
+
+@dataclass
+class EarlyStoppingConfig:
+    patience: int
+    min_delta: float
+    higher_is_better: bool

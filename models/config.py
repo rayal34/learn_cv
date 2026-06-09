@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from omegaconf import MISSING
 
@@ -29,7 +30,7 @@ class SimpleCNNModelConfig:
 @dataclass
 class ResNetStemConfig:
     conv: ConvSpec = MISSING
-    maxpool: MaxPoolSpec = MISSING
+    maxpool: Optional[MaxPoolSpec] = None
 
 
 @dataclass

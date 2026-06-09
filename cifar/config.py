@@ -4,6 +4,7 @@ from typing import Any
 from base.config import (
     DataAugmentationConfig,
     DataConfig,
+    EarlyStoppingConfig,
     GenericConfig,
     TrainingConfig,
 )
@@ -25,6 +26,8 @@ class ExperimentConfig:
 
     optimizer: GenericConfig = MISSING
 
+    early_stopping: EarlyStoppingConfig = MISSING
+
     def to_dict(self) -> dict:
 
         return {
@@ -37,4 +40,5 @@ class ExperimentConfig:
             "model": asdict(self.model),
             "scheduler": asdict(self.scheduler),
             "optimizer": asdict(self.optimizer),
+            "early_stopping": asdict(self.early_stopping),
         }

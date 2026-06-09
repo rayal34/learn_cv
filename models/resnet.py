@@ -74,17 +74,21 @@ class Stem(nn.Module):
         self.bn = nn.BatchNorm2d(model_config.conv.out_channels)
         self.relu = nn.ReLU(inplace=True)
 
-        self.maxpool = nn.MaxPool2d(
-            kernel_size=model_config.maxpool.kernel_size,
-            stride=model_config.maxpool.stride,
-            padding=model_config.maxpool.padding,
-        )
+        self.maxpool = None
+        if model_config.maxpool is not None:
+            self.maxpool = nn.MaxPool2d(
+                kernel_size=model_config.maxpool.kernel_size,
+                stride=model_config.maxpool.stride,
+                padding=model_config.maxpool.padding,
+            )
 
     def forward(self, x):
         out = self.conv(x)
         out = self.bn(out)
         out = self.relu(out)
-        out = self.maxpool(out)
+
+        if self.maxpool is not None:
+            out = self.maxpool(out)
         return out
 
 

@@ -31,11 +31,7 @@ train_augmentations:
 
 training:
   batch_size: 256
-  early_stopping_patience: 30
   num_epochs: 200
-
-  early_stopping: true
-
   scheduler_update_freq: step
 
 scheduler:
@@ -50,6 +46,11 @@ optimizer:
     lr: 1e-3
     weight_decay: 1e-2
 
+early_stopping:
+  patience: 30
+  min_delta: 0
+  higher_is_better: true
+
 model:
   stem:
     conv:
@@ -57,10 +58,10 @@ model:
       kernel_size: 3
       padding: 1
       stride: 1
-    maxpool:
-      kernel_size: 3
-      stride: 2
-      padding: 1
+    maxpool: null
+    #   kernel_size: 3
+    #   stride: 2
+    #   padding: 1
   layers:
     - out_channels: 64
       kernel_size: 3
@@ -77,8 +78,8 @@ model:
       padding: 1
       stride: 2
       blocks: 2
-    # - out_channels: 512
-    #   kernel_size: 3
-    #   padding: 1
-    #   stride: 2
-    #   blocks: 2
+    - out_channels: 512
+      kernel_size: 3
+      padding: 1
+      stride: 2
+      blocks: 2
