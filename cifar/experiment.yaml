@@ -16,18 +16,18 @@ train_augmentations:
         degrees: [-5.0, 5.0]
     - type: RandomCrop
       params:
-        size: 32
+        size: ${constant:INPUT_HEIGHT}
         padding: 2
         padding_mode: "reflect"
   dataloader_augmentations:
     - type: CutMix
       params:
         alpha: 0.2
-        num_classes: 100
+        num_classes: ${constant:NUM_CLASSES}
     - type: MixUp
       params:
         alpha: 0.2
-        num_classes: 100
+        num_classes: ${constant:NUM_CLASSES}
 
 training:
   batch_size: 256
@@ -59,9 +59,6 @@ model:
       padding: 1
       stride: 1
     maxpool: null
-    #   kernel_size: 3
-    #   stride: 2
-    #   padding: 1
   layers:
     - out_channels: 64
       kernel_size: 3

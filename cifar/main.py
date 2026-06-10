@@ -14,6 +14,10 @@ from utils.loss_functions import SoftCrossEntropyLoss
 from cifar import config, constants, load_data
 from cifar.utils import get_optimizer_and_scheduler
 
+OmegaConf.register_new_resolver(
+    "constant", lambda name: getattr(constants, name), replace=True
+)
+
 
 def main(config_path: str, profile: bool = False):
     base_config = OmegaConf.structured(config.ExperimentConfig)
