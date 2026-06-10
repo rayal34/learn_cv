@@ -3,6 +3,7 @@ import time
 
 import pytest
 import torch
+from unittest.mock import patch, MagicMock
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 from utils.general_utils import timer
@@ -256,3 +257,119 @@ def test_train_many_epochs(dummy_train_setup, tmp_path):
     )
     # Should stop early or complete
     assert early_stopping.best_score is not None
+
+
+# ==========================================
+# Tests for utils/augmentation_utils.py
+# ==========================================
+from utils.augmentation_utils import ZeroCenter, mixup, Cutup, cutmix
+
+
+def test_zero_center():
+    img = torch.tensor([10.0, 20.0, 30.0])
+    transform = ZeroCenter(mean=15.0)
+    assert torch.allclose(transform(img), torch.tensor([-5.0, 5.0, 15.0]))
+
+
+def test_mixup():
+    X = torch.ones(2, 3, 8, 8)
+    y = torch.tensor([0, 1])
+    device = torch.device("cpu")
+    X_mix, y_mix = mixup(X, y, alpha=1.0, num_classes=2, device=device)
+    assert X_mix.shape == (2, 3, 8, 8)
+    assert y_mix.shape == (2, 2)
+    assert torch.allclose(y_mix.sum(dim=1), torch.ones(2))
+
+
+def test_cutup_single_count():
+    img = torch.ones(3, 8, 8)
+    cutup = Cutup(size=4, fill_value=0, count=1)
+    out = cutup(img)
+    assert out.shape == (3, 8, 8)
+    assert (out == 0).any()
+
+
+def test_cutup_fill_value_list_tuple():
+    img = torch.ones(3, 8, 8)
+    cutup_list = Cutup(size=4, fill_value=[0.0, 0.0, 0.0], count=1)
+    out_list = cutup_list(img)
+    assert out_list.shape == (3, 8, 8)
+
+    cutup_tensor = Cutup(size=4, fill_value=torch.tensor([0.0, 0.0, 0.0]), count=1)
+    out_tensor = cutup_tensor(img)
+    assert out_tensor.shape == (3, 8, 8)
+
+
+def test_cutmix():
+    X = torch.ones(2, 3, 8, 8)
+    y = torch.tensor([0, 1])
+    device = torch.device("cpu")
+    X_mix, y_mix = cutmix(X, y, alpha=1.0, num_classes=2, device=device)
+    assert X_mix.shape == (2, 3, 8, 8)
+    assert y_mix.shape == (2, 2)
+    assert torch.allclose(y_mix.sum(dim=1), torch.ones(2))
+
+
+# ==========================================
+# Additional tests for utils/train_utils.py
+# ==========================================
+
+def test_compute_accuracy_one_hot():
+    scores = torch.tensor([[0.1, 0.9], [0.8, 0.2], [0.3, 0.7]])
+    labels = torch.tensor([[0.0, 1.0], [1.0, 0.0], [1.0, 0.0]])
+    acc = compute_accuracy(scores, labels)
+    assert acc == 2.0
+
+
+@patch("utils.train_utils.torch.cuda.is_available")
+@patch("utils.train_utils.torch.cuda.manual_seed_all")
+def test_seed_everything_cuda(mock_seed_all, mock_cuda_avail):
+    mock_cuda_avail.return_value = True
+    with patch("utils.train_utils.torch.backends.cudnn") as mock_cudnn:
+        seed_everything(42)
+        mock_seed_all.assert_called_with(42)
+        assert mock_cudnn.deterministic is True
+
+
+@patch("utils.train_utils.torch.cuda.is_available")
+@patch("utils.train_utils.torch.backends.mps.is_available")
+@patch("utils.train_utils.torch.mps.manual_seed")
+def test_seed_everything_mps(mock_mps_seed, mock_mps_avail, mock_cuda_avail):
+    mock_cuda_avail.return_value = False
+    mock_mps_avail.return_value = True
+    seed_everything(42)
+    mock_mps_seed.assert_called_with(42)
+
+
+def test_train_loop_with_profiler(dummy_train_setup, tmp_path):
+    dataloader, model, loss_fn, optimizer, device = dummy_train_setup
+    profiler_dir = str(tmp_path / "profile")
+    loss, acc, update_scales = train_loop(
+        dataloader, model, loss_fn, device, optimizer, profiler_dir=profiler_dir
+    )
+    assert loss >= 0
+    assert os.path.exists(profiler_dir)
+
+
+def test_train_many_epochs_with_scheduler_and_writer(dummy_train_setup, tmp_path):
+    dataloader, model, loss_fn, optimizer, device = dummy_train_setup
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1)
+    mock_writer = MagicMock()
+
+    model_out = train_many_epochs(
+        epochs=1,
+        train_dataloader=dataloader,
+        test_dataloader=dataloader,
+        model=model,
+        train_loss_fn=loss_fn,
+        eval_loss_fn=loss_fn,
+        device=device,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        scheduler_update_freq="epoch",
+        early_stopping=None,
+        writer=mock_writer,
+    )
+    assert model_out is model
+    mock_writer.add_scalar.assert_called()
+
