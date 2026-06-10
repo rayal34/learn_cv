@@ -32,10 +32,10 @@ train_augmentations:
 training:
   batch_size: 256
   num_epochs: 200
-  scheduler_update_freq: step
 
 scheduler:
   type: OneCycleLR
+  update_freq: step
   params:
     max_lr: 1e-2
     pct_start: 0.1

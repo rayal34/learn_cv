@@ -26,21 +26,19 @@ class DataConfig:
 
 @dataclass
 class TrainingConfig:
-    learning_rate: float
     batch_size: int
-    early_stopping_patience: int
     num_epochs: int
-
-    weight_decay: float
-    early_stopping: bool
-
-    scheduler_update_freq: str = "epoch"
 
 
 @dataclass
 class GenericConfig:
     type: str
     params: dict[str, Any]
+
+
+@dataclass
+class SchedulerConfig(GenericConfig):
+    update_freq: str = "epoch"
 
 
 @dataclass

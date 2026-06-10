@@ -1,12 +1,13 @@
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from base.config import (
     DataAugmentationConfig,
     DataConfig,
     EarlyStoppingConfig,
     GenericConfig,
+    SchedulerConfig,
     TrainingConfig,
 )
 from omegaconf import MISSING
@@ -24,11 +25,11 @@ class ExperimentConfig:
     training: TrainingConfig = MISSING
     model: Any = MISSING
 
-    scheduler: GenericConfig = MISSING
+    scheduler: SchedulerConfig = MISSING
 
     optimizer: GenericConfig = MISSING
 
-    early_stopping: EarlyStoppingConfig = MISSING
+    early_stopping: Optional[EarlyStoppingConfig] = None
 
     def to_dict(self) -> dict:
 
@@ -42,5 +43,7 @@ class ExperimentConfig:
             "model": asdict(self.model),
             "scheduler": asdict(self.scheduler),
             "optimizer": asdict(self.optimizer),
-            "early_stopping": asdict(self.early_stopping),
+            "early_stopping": asdict(self.early_stopping)
+            if self.early_stopping is not None
+            else None,
         }

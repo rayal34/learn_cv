@@ -28,16 +28,11 @@ def test_data_config():
 
 def test_training_config():
     config = TrainingConfig(
-        learning_rate=0.001,
         batch_size=64,
-        early_stopping_patience=5,
         num_epochs=10,
-        weight_decay=1e-4,
-        early_stopping=True,
     )
-    assert config.learning_rate == 0.001
     assert config.batch_size == 64
-    assert config.early_stopping is True
+    assert config.num_epochs == 10
 
 
 # ==========================================

@@ -9,6 +9,7 @@ from fashion_mnist.config import (
     DataConfig,
     ExperimentConfig,
     GenericConfig,
+    SchedulerConfig,
     TrainingConfig,
 )
 from fashion_mnist.load_data import (
@@ -45,15 +46,11 @@ def test_experiment_config_to_dict():
         test_labels_filename="test_lbls",
     )
     training_cfg = TrainingConfig(
-        learning_rate=0.001,
         batch_size=32,
-        early_stopping_patience=3,
         num_epochs=5,
-        weight_decay=1e-5,
-        early_stopping=False,
     )
 
-    scheduler_cfg = GenericConfig(
+    scheduler_cfg = SchedulerConfig(
         type="ReduceLROnPlateau",
         params={
             "patience": 2,
@@ -186,12 +183,8 @@ def test_get_dataloaders(mock_load_dataset):
         test_labels_filename="test_lbls",
     )
     training_cfg = TrainingConfig(
-        learning_rate=0.01,
         batch_size=4,
-        early_stopping_patience=2,
         num_epochs=2,
-        weight_decay=1e-4,
-        early_stopping=False,
     )
 
     exp_cfg = ExperimentConfig(
@@ -212,15 +205,19 @@ def test_get_dataloaders(mock_load_dataset):
 # ==========================================
 
 
+@patch("fashion_mnist.main.train_utils.save_model")
 @patch("fashion_mnist.main.train_utils.train_many_epochs")
 @patch("fashion_mnist.main.load_data.get_dataloaders")
 @patch("fashion_mnist.main.SummaryWriter")
+@patch("fashion_mnist.main.torch.compile")
 @patch("fashion_mnist.main.OmegaConf.merge")
 def test_fashion_mnist_main(
     mock_merge,
+    mock_compile,
     mock_summary_writer,
     mock_get_dataloaders,
     mock_train_many_epochs,
+    mock_save_model,
     tmp_path,
 ):
     # Setup mock dataloaders
@@ -231,10 +228,6 @@ def test_fashion_mnist_main(
     mock_exp = MagicMock()
     mock_exp.name = "test_fashion_mnist_run"
     mock_exp.seed = 42
-    mock_exp.training.learning_rate = 0.001
-    mock_exp.training.weight_decay = 1e-4
-    mock_exp.training.early_stopping = True
-    mock_exp.training.early_stopping_patience = 3
     mock_exp.training.num_epochs = 2
     mock_exp.dataset.root = str(tmp_path)
     mock_exp.dataset.experiment_path = str(tmp_path / "experiments")
@@ -274,3 +267,4 @@ def test_fashion_mnist_main(
     mock_get_dataloaders.assert_called_once()
     mock_train_many_epochs.assert_called_once()
     mock_summary_writer.assert_called_once()
+    mock_save_model.assert_called_once()

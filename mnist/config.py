@@ -1,8 +1,14 @@
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
-from base.config import DataConfig, GenericConfig, TrainingConfig
+from base.config import (
+    DataConfig,
+    EarlyStoppingConfig,
+    GenericConfig,
+    SchedulerConfig,
+    TrainingConfig,
+)
 from omegaconf import MISSING
 
 
@@ -28,8 +34,9 @@ class ExperimentConfig:
     )
     training: TrainingConfig = MISSING
     model: Any = MISSING
-    scheduler: GenericConfig = MISSING
+    scheduler: SchedulerConfig = MISSING
     optimizer: GenericConfig = MISSING
+    early_stopping: Optional[EarlyStoppingConfig] = None
 
     def to_dict(self) -> dict:
 

@@ -6,6 +6,7 @@ from mnist.config import (
     DataConfig,
     ExperimentConfig,
     GenericConfig,
+    SchedulerConfig,
     TrainingConfig,
 )
 from mnist.load_data import get_dataloaders, load_test_data, load_training_data
@@ -28,15 +29,11 @@ def test_mnist_experiment_config_to_dict():
         test_labels_filename="test_lbls",
     )
     training_cfg = TrainingConfig(
-        learning_rate=0.002,
         batch_size=128,
-        early_stopping_patience=4,
         num_epochs=3,
-        weight_decay=1e-5,
-        early_stopping=True,
     )
 
-    scheduler_cfg = GenericConfig(
+    scheduler_cfg = SchedulerConfig(
         type="ReduceLROnPlateau",
         params={
             "patience": 2,
@@ -111,12 +108,8 @@ def test_get_dataloaders_mnist(mock_load_test, mock_load_train):
         test_labels_filename="test_lbls",
     )
     training_cfg = TrainingConfig(
-        learning_rate=0.002,
         batch_size=4,
-        early_stopping_patience=4,
         num_epochs=3,
-        weight_decay=1e-5,
-        early_stopping=True,
     )
     exp_cfg = ExperimentConfig(
         name="test_mnist_dl", seed=42, dataset=dataset_cfg, training=training_cfg
@@ -157,9 +150,6 @@ def test_mnist_main(
     mock_exp = MagicMock()
     mock_exp.name = "test_mnist_run"
     mock_exp.seed = 100
-    mock_exp.training.learning_rate = 0.001
-    mock_exp.training.weight_decay = 1e-4
-    mock_exp.training.early_stopping = False
     mock_exp.training.num_epochs = 1
     mock_exp.dataset.root = str(tmp_path)
     mock_exp.dataset.experiment_path = str(tmp_path / "experiments")

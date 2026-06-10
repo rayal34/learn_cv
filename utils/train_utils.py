@@ -3,7 +3,7 @@ import os
 import random
 import time
 from datetime import datetime
-from typing import Literal
+from typing import Optional
 
 import numpy as np
 import torch
@@ -79,8 +79,8 @@ def train_loop(
     loss_fn: torch.nn.Module,
     device: torch.device,
     optimizer: torch.optim.Optimizer,
-    scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
-    profiler_dir: str | None = None,
+    scheduler: Optional[torch.optim.lr_scheduler.LRScheduler] = None,
+    profiler_dir: Optional[str] = None,
 ):
     model.to(device)
     model.train()
@@ -156,12 +156,16 @@ def train_many_epochs(
     eval_loss_fn: torch.nn.Module,
     device: torch.device,
     optimizer: torch.optim.Optimizer,
-    scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
-    scheduler_update_freq: Literal["step", "epoch"] = "epoch",
-    early_stopping: EarlyStoppingWithCheckpoint | None = None,
-    writer: SummaryWriter | None = None,
-    profiler_dir: str | None = None,
+    scheduler: Optional[torch.optim.lr_scheduler.LRScheduler] = None,
+    scheduler_update_freq: str = "epoch",
+    early_stopping: Optional[EarlyStoppingWithCheckpoint] = None,
+    writer: Optional[SummaryWriter] = None,
+    profiler_dir: Optional[str] = None,
 ) -> nn.Module:
+
+    assert scheduler_update_freq in ["step", "epoch"], (
+        "scheduler_update_freq must be 'step' or 'epoch'"
+    )
 
     for epoch in range(epochs):
         start_time = time.perf_counter()

@@ -57,11 +57,13 @@ def main(config_path: str):
     train_loss_fn = nn.CrossEntropyLoss(reduction="sum")
     eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
-    if train_config.early_stopping:
+    if exp_config.early_stopping:
         early_stopping = train_utils.EarlyStoppingWithCheckpoint(
             model_path=data_config.model_path,
             model_name=exp_config.name,
-            patience=train_config.early_stopping_patience,
+            patience=exp_config.early_stopping.patience,
+            min_delta=exp_config.early_stopping.min_delta,
+            higher_is_better=exp_config.early_stopping.higher_is_better,
         )
     else:
         early_stopping = None
@@ -95,7 +97,7 @@ def main(config_path: str):
     if writer is not None:
         writer.close()
 
-    if not train_config.early_stopping:
+    if exp_config.early_stopping is not None:
         train_utils.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
 
 

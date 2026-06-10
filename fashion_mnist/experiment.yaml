@@ -15,10 +15,7 @@ data_augmentations:
 
 training:
   batch_size: 256
-  early_stopping_patience: 20
   num_epochs: 100
-
-  early_stopping: true
 
 scheduler:
   type: ReduceLROnPlateau
@@ -31,6 +28,11 @@ optimizer:
   params:
     lr: 2e-3
     weight_decay: 1e-2
+
+early_stopping:
+  patience: 30
+  min_delta: 0
+  higher_is_better: true
 
 model:
   dropout: 0.3

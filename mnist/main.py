@@ -80,7 +80,7 @@ def main(config_path: str):
     if writer is not None:
         writer.close()
 
-    if not train_config.early_stopping:
+    if exp_config.early_stopping is not None:
         train_utils.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
 
 
