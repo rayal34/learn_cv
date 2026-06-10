@@ -1,13 +1,11 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from omegaconf import MISSING
-
 
 @dataclass
 class MaxPoolSpec:
     kernel_size: int
-    stride: int | None = None
+    stride: Optional[int] = None
     padding: int = 0
 
 
@@ -22,14 +20,14 @@ class ConvSpec:
 
 @dataclass
 class SimpleCNNModelConfig:
-    conv_layers: list[ConvSpec] = MISSING
-    fc_hidden: list[int] = MISSING
-    dropout: float | None = MISSING
+    conv_layers: list[ConvSpec]
+    fc_hidden: list[int]
+    dropout: Optional[float]
 
 
 @dataclass
 class ResNetStemConfig:
-    conv: ConvSpec = MISSING
+    conv: ConvSpec
     maxpool: Optional[MaxPoolSpec] = None
 
 
@@ -43,6 +41,6 @@ class ResNetBlockConfig:
 
 
 @dataclass
-class ResNet18ModelConfig:
-    stem: ResNetStemConfig = MISSING
-    layers: list[ResNetBlockConfig] = MISSING
+class ResNetShallowModelConfig:
+    stem: ResNetStemConfig
+    layers: list[ResNetBlockConfig]

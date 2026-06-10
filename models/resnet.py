@@ -92,12 +92,12 @@ class Stem(nn.Module):
         return out
 
 
-class ResNet18(nn.Module):
+class ResNetShallow(nn.Module):
     def __init__(
         self,
         img_size: int,
         n_classes: int,
-        model_config: config.ResNet18ModelConfig,
+        model_config: config.ResNetShallowModelConfig,
     ):
         super().__init__()
 

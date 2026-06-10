@@ -85,7 +85,10 @@ def get_general_transforms():
 
 def get_dataloaders(config: config.ExperimentConfig):
 
-    train_transforms = get_train_transforms(config.train_augmentations)
+    if config.train_augmentations is not None:
+        train_transforms = get_train_transforms(config.train_augmentations)
+    else:
+        train_transforms = []
     general_transforms = get_general_transforms()
     all_transforms = train_transforms + general_transforms
     train_data = load_dataset(

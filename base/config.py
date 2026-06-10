@@ -9,10 +9,10 @@ class DataConfig:
     num_workers: int
     pin_memory: bool
 
-    train_images_filename: str | None = None
-    train_labels_filename: str | None = None
-    test_images_filename: str | None = None
-    test_labels_filename: str | None = None
+    train_images_filename: Optional[str] = None
+    train_labels_filename: Optional[str] = None
+    test_images_filename: Optional[str] = None
+    test_labels_filename: Optional[str] = None
 
     data_path: str = field(init=False, default="${.root}/data")
     model_path: str = field(init=False, default="${.root}/models")

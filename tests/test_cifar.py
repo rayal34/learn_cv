@@ -1,11 +1,16 @@
-import io
-import os
-import pickle
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import torch
 import yaml
+from base.config import (
+    DataAugmentationConfig,
+    DataConfig,
+    EarlyStoppingConfig,
+    GenericConfig,
+    SchedulerConfig,
+    TrainingConfig,
+)
 from cifar.config import ExperimentConfig
 from cifar.load_data import (
     Cifar100Dataset,
@@ -16,20 +21,12 @@ from cifar.load_data import (
 )
 from cifar.main import main
 from cifar.utils import get_optimizer_and_scheduler
-from base.config import (
-    DataAugmentationConfig,
-    DataConfig,
-    EarlyStoppingConfig,
-    GenericConfig,
-    SchedulerConfig,
-    TrainingConfig,
-)
 from models.config import (
     ConvSpec,
-    ResNet18ModelConfig,
-    ResNetBlockConfig,
+    ResNetShallowModelConfig,
     ResNetStemConfig,
 )
+from omegaconf import MISSING
 
 
 def test_cifar_experiment_config_to_dict():
@@ -63,11 +60,9 @@ def test_cifar_experiment_config_to_dict():
         min_delta=0.0,
         higher_is_better=True,
     )
-    stem_conv = ConvSpec(
-        out_channels=16, kernel_size=3, padding=1, pool=None, stride=1
-    )
+    stem_conv = ConvSpec(out_channels=16, kernel_size=3, padding=1, pool=None, stride=1)
     stem_config = ResNetStemConfig(conv=stem_conv, maxpool=None)
-    model_cfg = ResNet18ModelConfig(stem=stem_config, layers=[])
+    model_cfg = ResNetShallowModelConfig(stem=stem_config, layers=[])
 
     exp_cfg = ExperimentConfig(
         name="test_cifar_exp",
@@ -185,6 +180,9 @@ def test_get_dataloaders(mock_load_dataset):
         ],
     )
     exp_cfg = ExperimentConfig(
+        model=MISSING,
+        scheduler=MISSING,
+        optimizer=MISSING,
         name="test_cifar_dl",
         seed=42,
         dry_run=False,
@@ -208,6 +206,9 @@ def test_get_dataloaders(mock_load_dataset):
 
     # Cover else branch where dataloader_augmentations is None
     exp_cfg_no_dl_aug = ExperimentConfig(
+        model=MISSING,
+        scheduler=MISSING,
+        optimizer=MISSING,
         name="test_cifar_dl",
         seed=42,
         dry_run=False,
@@ -218,6 +219,7 @@ def test_get_dataloaders(mock_load_dataset):
         training=training_cfg,
     )
     from torch.utils.data import default_collate
+
     train_dl2, _ = get_dataloaders(exp_cfg_no_dl_aug)
     assert train_dl2.collate_fn is default_collate
 
@@ -243,6 +245,9 @@ def test_get_optimizer_and_scheduler():
         num_epochs=5,
     )
     exp_cfg = ExperimentConfig(
+        model=MISSING,
+        dataset=MISSING,
+        train_augmentations=MISSING,
         name="test_cifar_opt",
         seed=42,
         optimizer=optimizer_cfg,

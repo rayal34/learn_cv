@@ -9,7 +9,6 @@ from base.config import (
     SchedulerConfig,
     TrainingConfig,
 )
-from omegaconf import MISSING
 
 
 @dataclass
@@ -23,19 +22,20 @@ class DataAugmentationConfig:
 
 @dataclass
 class ExperimentConfig:
+    dataset: DataConfig
+    training: TrainingConfig
+    model: Any
+    optimizer: GenericConfig
+    scheduler: SchedulerConfig
     name: str = field(
         default_factory=lambda: datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     )
     seed: int = 42
     dry_run: bool = False
-    dataset: DataConfig = MISSING
     data_augmentations: DataAugmentationConfig = field(
         default_factory=DataAugmentationConfig
     )
-    training: TrainingConfig = MISSING
-    model: Any = MISSING
-    optimizer: GenericConfig = MISSING
-    scheduler: SchedulerConfig = MISSING
+
     early_stopping: Optional[EarlyStoppingConfig] = None
 
     def to_dict(self) -> dict:

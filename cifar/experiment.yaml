@@ -1,5 +1,5 @@
 seed: 42
-dry_run: false
+dry_run: true
 
 dataset:
   root: "/Volumes/satechi/ml_projects/cifar"
@@ -80,3 +80,39 @@ model:
       padding: 1
       stride: 2
       blocks: 2
+
+# resnet34
+# model:
+#   stem:
+#     conv:
+#       out_channels: 64
+#       kernel_size: 7
+#       padding: 1
+#       stride: 2
+#     maxpool:
+#       kernel_size: 3
+#   layers:
+#     # stage 1
+#     - out_channels: 64
+#       kernel_size: 3
+#       padding: 1
+#       stride: 1
+#       blocks: 3
+#     # stage 2
+#     - out_channels: 128
+#       kernel_size: 3
+#       padding: 1
+#       stride: 2
+#       blocks: 4
+#     # stage 3
+#     - out_channels: 256
+#       kernel_size: 3
+#       padding: 1
+#       stride: 2
+#       blocks: 6
+#     # stage 4
+#     - out_channels: 512
+#       kernel_size: 3
+#       padding: 1
+#       stride: 2
+#       blocks: 3

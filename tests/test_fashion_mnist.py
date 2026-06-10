@@ -21,6 +21,7 @@ from fashion_mnist.load_data import (
 )
 from fashion_mnist.main import main
 from models.config import SimpleCNNModelConfig
+from omegaconf import MISSING
 from utils.augmentation_utils import ZeroOneScale
 
 # ==========================================
@@ -73,7 +74,9 @@ def test_experiment_config_to_dict():
         training=training_cfg,
         optimizer=optimizer_cfg,
         scheduler=scheduler_cfg,
-        model=SimpleCNNModelConfig(),
+        model=SimpleCNNModelConfig(
+            conv_layers=MISSING, fc_hidden=MISSING, dropout=MISSING
+        ),
     )
 
     d = exp_cfg.to_dict()
@@ -188,7 +191,14 @@ def test_get_dataloaders(mock_load_dataset):
     )
 
     exp_cfg = ExperimentConfig(
-        name="test_dl", dataset=dataset_cfg, training=training_cfg
+        name="test_dl",
+        dataset=dataset_cfg,
+        training=training_cfg,
+        model=SimpleCNNModelConfig(
+            conv_layers=MISSING, fc_hidden=MISSING, dropout=MISSING
+        ),
+        scheduler=MISSING,
+        optimizer=MISSING,
     )
 
     train_dl, test_dl = get_dataloaders(exp_cfg)

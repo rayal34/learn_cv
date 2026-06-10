@@ -5,7 +5,7 @@ from typing import cast
 
 import torch
 import torch.nn as nn
-from models.resnet import ResNet18
+from models.resnet import ResNetShallow
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 from utils import train_utils
@@ -34,7 +34,7 @@ def main(config_path: str, profile: bool = False):
 
     train_dataloader, test_dataloader = load_data.get_dataloaders(exp_config)
 
-    model = ResNet18(constants.INPUT_CHANNELS, constants.NUM_CLASSES, model_config)
+    model = ResNetShallow(constants.INPUT_CHANNELS, constants.NUM_CLASSES, model_config)
     if torch.cuda.is_available():
         device = torch.device("cuda")
         torch.compile(model)

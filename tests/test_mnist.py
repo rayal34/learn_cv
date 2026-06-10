@@ -12,6 +12,7 @@ from mnist.config import (
 from mnist.load_data import get_dataloaders, load_test_data, load_training_data
 from mnist.main import main
 from models.config import SimpleCNNModelConfig
+from omegaconf import MISSING
 
 # ==========================================
 # Tests for mnist/config.py
@@ -56,7 +57,9 @@ def test_mnist_experiment_config_to_dict():
         training=training_cfg,
         optimizer=optimizer_cfg,
         scheduler=scheduler_cfg,
-        model=SimpleCNNModelConfig(),
+        model=SimpleCNNModelConfig(
+            conv_layers=MISSING, fc_hidden=MISSING, dropout=MISSING
+        ),
     )
 
     d = exp_cfg.to_dict()
@@ -112,7 +115,13 @@ def test_get_dataloaders_mnist(mock_load_test, mock_load_train):
         num_epochs=3,
     )
     exp_cfg = ExperimentConfig(
-        name="test_mnist_dl", seed=42, dataset=dataset_cfg, training=training_cfg
+        name="test_mnist_dl",
+        seed=42,
+        dataset=dataset_cfg,
+        training=training_cfg,
+        model=MISSING,
+        scheduler=MISSING,
+        optimizer=MISSING,
     )
 
     train_dl, test_dl = get_dataloaders(exp_cfg)
