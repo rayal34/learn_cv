@@ -2,7 +2,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any, Optional
 
-from base.config import (
+from core.config import (
     DataConfig,
     EarlyStoppingConfig,
     GenericConfig,

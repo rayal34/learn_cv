@@ -3,7 +3,17 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import torch
 import yaml
-from base.config import (
+from cifar.from_scratch.config import ExperimentConfig
+from cifar.from_scratch.load_data import (
+    Cifar100Dataset,
+    get_dataloaders,
+    get_label_mappings,
+    load_dataset,
+    unpickle,
+)
+from cifar.from_scratch.main import main
+from cifar.utils import get_optimizer_and_scheduler
+from core.config import (
     DataAugmentationConfig,
     DataConfig,
     EarlyStoppingConfig,
@@ -11,16 +21,6 @@ from base.config import (
     SchedulerConfig,
     TrainingConfig,
 )
-from cifar.config import ExperimentConfig
-from cifar.load_data import (
-    Cifar100Dataset,
-    get_dataloaders,
-    get_label_mappings,
-    load_dataset,
-    unpickle,
-)
-from cifar.main import main
-from cifar.utils import get_optimizer_and_scheduler
 from models.config import (
     ConvSpec,
     ResNetShallowModelConfig,
@@ -120,7 +120,7 @@ def test_unpickle(mock_pickle_load, mock_open):
     mock_pickle_load.assert_called_once_with(mock_file, encoding="latin1")
 
 
-@patch("cifar.load_data.unpickle")
+@patch("cifar.from_scratch.load_data.unpickle")
 def test_get_label_mappings(mock_unpickle):
     mock_unpickle.return_value = {"fine_label_names": ["apple", "banana"]}
     label_int_mapping, int_label_mapping = get_label_mappings("dummy_path")
@@ -128,8 +128,8 @@ def test_get_label_mappings(mock_unpickle):
     assert int_label_mapping == {0: "apple", 1: "banana"}
 
 
-@patch("cifar.load_data.unpickle")
-@patch("cifar.load_data.get_label_mappings")
+@patch("cifar.from_scratch.load_data.unpickle")
+@patch("cifar.from_scratch.load_data.get_label_mappings")
 def test_load_dataset(mock_get_label_mappings, mock_unpickle):
     mock_get_label_mappings.return_value = (
         {"apple": 0, "banana": 1},
@@ -154,7 +154,7 @@ def test_load_dataset(mock_get_label_mappings, mock_unpickle):
     assert dataset.imgs.shape == (4, 3, 32, 32)
 
 
-@patch("cifar.load_data.load_dataset")
+@patch("cifar.from_scratch.load_data.load_dataset")
 def test_get_dataloaders(mock_load_dataset):
     imgs = np.zeros((8, 3, 32, 32), dtype=np.uint8)
     labels = ["apple"] * 8
@@ -264,19 +264,17 @@ def test_get_optimizer_and_scheduler():
     assert isinstance(scheduler, torch.optim.lr_scheduler.OneCycleLR)
 
 
-@patch("cifar.main.train_utils.save_model")
-@patch("cifar.main.train_utils.train_many_epochs")
-@patch("cifar.main.load_data.get_dataloaders")
-@patch("cifar.main.SummaryWriter")
-@patch("cifar.main.torch.compile")
-@patch("cifar.main.OmegaConf.merge")
+@patch("cifar.from_scratch.main.OmegaConf.merge")
+@patch("cifar.from_scratch.main.SummaryWriter")
+@patch("cifar.from_scratch.main.load_data.get_dataloaders")
+@patch("cifar.from_scratch.main.training.train_many_epochs")
+@patch("cifar.from_scratch.main.training.save_model")
 def test_cifar_main(
-    mock_merge,
-    mock_compile,
-    mock_summary_writer,
-    mock_get_dataloaders,
-    mock_train_many_epochs,
     mock_save_model,
+    mock_train_many_epochs,
+    mock_get_dataloaders,
+    mock_summary_writer,
+    mock_merge,
     tmp_path,
 ):
     mock_dl = MagicMock()
@@ -340,20 +338,16 @@ def test_cifar_main(
     mock_save_model.assert_not_called()  # Because early_stopping is not None
 
 
-@patch("cifar.main.train_utils.save_model")
-@patch("cifar.main.train_utils.train_many_epochs")
-@patch("cifar.main.load_data.get_dataloaders")
-@patch("cifar.main.SummaryWriter")
-@patch("cifar.main.torch.compile")
-@patch("cifar.main.OmegaConf.merge")
-@patch("cifar.main.torch.cuda.is_available")
-@patch("cifar.main.torch.backends.mps.is_available")
+@patch("cifar.from_scratch.main.training.save_model")
+@patch("cifar.from_scratch.main.training.train_many_epochs")
+@patch("cifar.from_scratch.main.load_data.get_dataloaders")
+@patch("cifar.from_scratch.main.OmegaConf.merge")
+@patch("cifar.from_scratch.main.torch.cuda.is_available")
+@patch("cifar.from_scratch.main.torch.backends.mps.is_available")
 def test_cifar_main_other_branches(
     mock_mps_avail,
     mock_cuda_avail,
     mock_merge,
-    mock_compile,
-    mock_summary_writer,
     mock_get_dataloaders,
     mock_train_many_epochs,
     mock_save_model,

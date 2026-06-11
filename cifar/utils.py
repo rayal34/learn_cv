@@ -3,12 +3,13 @@ from torch import optim
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 
-from cifar.config import ExperimentConfig
+from cifar.fine_tune.config import ExperimentConfig as FTExperimentConfig
+from cifar.from_scratch.config import ExperimentConfig as FSExperimentConfig
 
 
 def get_optimizer_and_scheduler(
     model: torch.nn.Module,
-    exp_config: ExperimentConfig,
+    exp_config: FSExperimentConfig | FTExperimentConfig,
     train_dataloader: DataLoader,
 ):
 

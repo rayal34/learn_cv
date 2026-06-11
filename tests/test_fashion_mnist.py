@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import torch
 import yaml
+from core.augmentations import ZeroOneScale
 from fashion_mnist.config import (
     DataAugmentationConfig,
     DataConfig,
@@ -22,7 +23,6 @@ from fashion_mnist.load_data import (
 from fashion_mnist.main import main
 from models.config import SimpleCNNModelConfig
 from omegaconf import MISSING
-from utils.augmentation_utils import ZeroOneScale
 
 # ==========================================
 # Tests for fashion_mnist/config.py
@@ -215,15 +215,13 @@ def test_get_dataloaders(mock_load_dataset):
 # ==========================================
 
 
-@patch("fashion_mnist.main.train_utils.save_model")
-@patch("fashion_mnist.main.train_utils.train_many_epochs")
+@patch("fashion_mnist.main.training.save_model")
+@patch("fashion_mnist.main.training.train_many_epochs")
 @patch("fashion_mnist.main.load_data.get_dataloaders")
 @patch("fashion_mnist.main.SummaryWriter")
-@patch("fashion_mnist.main.torch.compile")
 @patch("fashion_mnist.main.OmegaConf.merge")
 def test_fashion_mnist_main(
     mock_merge,
-    mock_compile,
     mock_summary_writer,
     mock_get_dataloaders,
     mock_train_many_epochs,

@@ -5,32 +5,43 @@ from typing import cast
 
 import torch
 import torch.nn as nn
-from core import training
-from models.cnn import SimpleCNN
+from core import fine_tuning, training
+from core.loss_functions import SoftCrossEntropyLoss
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
+from torchvision.models import ResNet50_Weights, resnet50
 
-from fashion_mnist import config, constants, load_data
-from fashion_mnist.utils import get_optimizer_and_scheduler
+from cifar.fine_tune import config, constants, load_data
+from cifar.utils import get_optimizer_and_scheduler
+
+OmegaConf.register_new_resolver(
+    "constant", lambda name: getattr(constants, name), replace=True
+)
 
 
-def main(config_path: str):
+def main(config_path: str, profile: bool = False):
+    os.environ["TORCH_HOME"] = "/Volumes/satechi/ml_projects/"
+
     base_config = OmegaConf.structured(config.ExperimentConfig)
-
     yaml_config = OmegaConf.load(config_path)
+
     exp_config = cast(
         config.ExperimentConfig, OmegaConf.merge(base_config, yaml_config)
     )
+    training.seed_everything(exp_config.seed)
 
     train_config = exp_config.training
     data_config = exp_config.dataset
-    model_config = exp_config.model
-
-    training.seed_everything(exp_config.seed)
 
     train_dataloader, test_dataloader = load_data.get_dataloaders(exp_config)
 
-    model = SimpleCNN(constants.INPUT_CHANNELS, constants.INPUT_HEIGHT, model_config)
+    model = fine_tuning.FineTuneResNet(
+        resnet50(weights=ResNet50_Weights.IMAGENET1K_V2),
+        constants.NUM_CLASSES,
+        freeze_bn="stats",
+    )
+    model = fine_tuning.freeze_layers(model, prefix_layers_to_train=["backbone.fc"])
+
     if torch.cuda.is_available():
         device = torch.device("cuda")
         torch.compile(model)
@@ -53,9 +64,8 @@ def main(config_path: str):
     optimizer, scheduler = get_optimizer_and_scheduler(
         model=model,
         exp_config=exp_config,
+        train_dataloader=train_dataloader,
     )
-    train_loss_fn = nn.CrossEntropyLoss(reduction="sum")
-    eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
     if exp_config.early_stopping:
         early_stopping = training.EarlyStoppingWithCheckpoint(
@@ -80,8 +90,17 @@ def main(config_path: str):
             config_dict = exp_config.to_dict()
         writer.add_text("Config", json.dumps(config_dict))
 
+    train_loss_fn = SoftCrossEntropyLoss(reduction="sum")
+    eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")
+
+    profiler_dir = None
+    num_epochs = train_config.num_epochs
+    if profile:
+        profiler_dir = f"{data_config.experiment_path}/{exp_config.name}/profile"
+        num_epochs = 5
+
     model = training.train_many_epochs(
-        epochs=train_config.num_epochs,
+        epochs=num_epochs,
         train_dataloader=train_dataloader,
         test_dataloader=test_dataloader,
         model=model,
@@ -90,14 +109,16 @@ def main(config_path: str):
         device=device,
         optimizer=optimizer,
         scheduler=scheduler,
-        early_stopping=early_stopping,
+        scheduler_update_freq=exp_config.scheduler.update_freq,
+        early_stopping=early_stopping if not profile else None,
         writer=writer,
+        profiler_dir=profiler_dir,
     )
 
     if writer is not None:
         writer.close()
 
-    if exp_config.early_stopping is not None:
+    if not profile and early_stopping is None:
         training.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
 
 
@@ -108,9 +129,14 @@ if __name__ == "__main__":
         "--config",
         type=str,
         default=os.path.join(os.path.dirname(__file__), "experiment.yaml"),
-        help="Path to the YAML configuration file.",
+    )
+
+    parser.add_argument(
+        "--profile",
+        type=bool,
+        default=False,
     )
 
     args = parser.parse_args()
 
-    main(config_path=args.config)
+    main(config_path=args.config, profile=args.profile)

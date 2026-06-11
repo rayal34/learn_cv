@@ -1,0 +1,52 @@
+seed: 42
+dry_run: false
+
+dataset:
+  root: "/Volumes/satechi/ml_projects/cifar"
+  num_workers: 0
+  pin_memory: false
+
+train_augmentations:
+  dataset_augmentations:
+    - type: RandomHorizontalFlip
+      params:
+        p: 0.5
+    - type: RandomRotation
+      params:
+        degrees: [-5.0, 5.0]
+    - type: RandomCrop
+      params:
+        size: ${constant:INPUT_HEIGHT}
+        padding: 2
+        padding_mode: "reflect"
+  dataloader_augmentations:
+    - type: CutMix
+      params:
+        alpha: 0.2
+        num_classes: ${constant:NUM_CLASSES}
+    - type: MixUp
+      params:
+        alpha: 0.2
+        num_classes: ${constant:NUM_CLASSES}
+
+training:
+  batch_size: 256
+  num_epochs: 200
+
+scheduler:
+  type: OneCycleLR
+  update_freq: step
+  params:
+    max_lr: 1e-2
+    pct_start: 0.1
+
+optimizer:
+  type: AdamW
+  params:
+    lr: 1e-3
+    weight_decay: 1e-2
+
+early_stopping:
+  patience: 30
+  min_delta: 0
+  higher_is_better: true

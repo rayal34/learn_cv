@@ -2,9 +2,9 @@ import gzip
 
 import numpy as np
 import torch
+from core.augmentations import ZeroOneScale
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import v2
-from utils.augmentation_utils import ZeroOneScale
 
 from fashion_mnist import config, constants
 

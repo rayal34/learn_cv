@@ -1,5 +1,5 @@
 seed: 42
-dry_run: true
+dry_run: false
 
 dataset:
   root: "/Volumes/satechi/ml_projects/cifar"

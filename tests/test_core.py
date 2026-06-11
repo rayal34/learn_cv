@@ -1,14 +1,11 @@
 import os
-import time
+from unittest.mock import MagicMock, patch
 
 import pytest
 import torch
-from unittest.mock import patch, MagicMock
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
-from utils.general_utils import timer
-from utils.img_utils import compute_conv_layer_sizes, conv_output_size
-from utils.train_utils import (
+from core.config import DataConfig, TrainingConfig
+from core.training import (
     EarlyStoppingWithCheckpoint,
     compute_accuracy,
     eval_loop,
@@ -18,58 +15,12 @@ from utils.train_utils import (
     train_loop,
     train_many_epochs,
 )
+from models.cnn import SimpleCNN
+from models.config import ConvSpec, SimpleCNNModelConfig
+from torch.utils.data import DataLoader, TensorDataset
 
 # ==========================================
-# Tests for utils/general_utils.py
-# ==========================================
-
-
-def test_timer_decorator(capsys):
-    @timer
-    def dummy_func(x):
-        time.sleep(0.01)
-        return x * 2
-
-    res = dummy_func(5)
-    assert res == 10
-
-    captured = capsys.readouterr()
-    assert "Function dummy_func took" in captured.out
-    assert "seconds" in captured.out
-
-
-# ==========================================
-# Tests for utils/img_utils.py
-# ==========================================
-
-
-def test_conv_output_size():
-    # in_size=28, kernel=3, stride=1, padding=1 -> (28 - 3 + 2*1)//1 + 1 = 28
-    assert conv_output_size(28, 3, 1, 1) == 28
-    # in_size=28, kernel=3, stride=2, padding=0 -> (28 - 3)//2 + 1 = 13
-    assert conv_output_size(28, 3, 2, 0) == 13
-    # in_size=13, kernel=2, stride=2, padding=0 -> (13 - 2)//2 + 1 = 6
-    assert conv_output_size(13, 2, 2, 0) == 6
-
-
-def test_compute_conv_layer_sizes():
-    class DummyLayer:
-        def __init__(self, kernel_size, stride, padding):
-            self.kernel_size = kernel_size
-            self.stride = stride
-            self.padding = padding
-
-    layers = [
-        DummyLayer(3, 1, 1),
-        DummyLayer(3, 2, 0),
-        DummyLayer(2, 2, 0),
-    ]
-    sizes = compute_conv_layer_sizes(28, layers)
-    assert sizes == [28, 13, 6]
-
-
-# ==========================================
-# Tests for utils/train_utils.py
+# Tests for core/training.py
 # ==========================================
 
 
@@ -260,9 +211,9 @@ def test_train_many_epochs(dummy_train_setup, tmp_path):
 
 
 # ==========================================
-# Tests for utils/augmentation_utils.py
+# Tests for core/augmentations.py
 # ==========================================
-from utils.augmentation_utils import ZeroCenter, mixup, Cutup, cutmix
+from core.augmentations import Cutup, ZeroCenter, cutmix, mixup
 
 
 def test_zero_center():
@@ -311,8 +262,9 @@ def test_cutmix():
 
 
 # ==========================================
-# Additional tests for utils/train_utils.py
+# Additional tests for core/training.py
 # ==========================================
+
 
 def test_compute_accuracy_one_hot():
     scores = torch.tensor([[0.1, 0.9], [0.8, 0.2], [0.3, 0.7]])
@@ -321,19 +273,19 @@ def test_compute_accuracy_one_hot():
     assert acc == 2.0
 
 
-@patch("utils.train_utils.torch.cuda.is_available")
-@patch("utils.train_utils.torch.cuda.manual_seed_all")
+@patch("core.training.torch.cuda.is_available")
+@patch("core.training.torch.cuda.manual_seed_all")
 def test_seed_everything_cuda(mock_seed_all, mock_cuda_avail):
     mock_cuda_avail.return_value = True
-    with patch("utils.train_utils.torch.backends.cudnn") as mock_cudnn:
+    with patch("core.training.torch.backends.cudnn") as mock_cudnn:
         seed_everything(42)
         mock_seed_all.assert_called_with(42)
         assert mock_cudnn.deterministic is True
 
 
-@patch("utils.train_utils.torch.cuda.is_available")
-@patch("utils.train_utils.torch.backends.mps.is_available")
-@patch("utils.train_utils.torch.mps.manual_seed")
+@patch("core.training.torch.cuda.is_available")
+@patch("core.training.torch.backends.mps.is_available")
+@patch("core.training.torch.mps.manual_seed")
 def test_seed_everything_mps(mock_mps_seed, mock_mps_avail, mock_cuda_avail):
     mock_cuda_avail.return_value = False
     mock_mps_avail.return_value = True
@@ -373,3 +325,91 @@ def test_train_many_epochs_with_scheduler_and_writer(dummy_train_setup, tmp_path
     assert model_out is model
     mock_writer.add_scalar.assert_called()
 
+
+# ==========================================
+# Tests for core/config.py
+# ==========================================
+
+
+def test_data_config():
+    config = DataConfig(
+        root="/dummy/root",
+        num_workers=0,
+        pin_memory=False,
+        train_images_filename="train-images-idx3-ubyte",
+        train_labels_filename="train-labels-idx1-ubyte",
+        test_images_filename="t10k-images-idx3-ubyte",
+        test_labels_filename="t10k-labels-idx1-ubyte",
+    )
+
+    assert config.root == "/dummy/root"
+    assert config.train_images_filename == "train-images-idx3-ubyte"
+    assert config.data_path == "/dummy/root/data"
+    assert config.model_path == "/dummy/root/models"
+    assert config.experiment_path == "/dummy/root/experiments"
+
+
+def test_training_config():
+    config = TrainingConfig(
+        batch_size=64,
+        num_epochs=10,
+    )
+    assert config.batch_size == 64
+    assert config.num_epochs == 10
+
+
+# ==========================================
+# Tests for core/model.py
+# ==========================================
+
+
+def test_simple_cnn_init_and_forward():
+    # Define a small CNN configuration
+    input_size = 28
+    n_classes = 10
+    conv_specs = [
+        ConvSpec(
+            out_channels=8, kernel_size=3, padding=1, pool=2, stride=1
+        ),  # size: 28 -> 28 -> 14
+        ConvSpec(
+            out_channels=16, kernel_size=3, padding=0, pool=None, stride=1
+        ),  # size: 14 -> 12
+    ]
+    model_config = SimpleCNNModelConfig(
+        conv_layers=conv_specs, fc_hidden=[32], dropout=0.2
+    )
+
+    # Instantiate model
+    model = SimpleCNN(
+        input_channels=1, input_size=input_size, model_config=model_config
+    )
+
+    # Validate structure
+    assert len(model.conv_blocks) == 2
+    assert len(model.fcs) == 2  # hidden (32) + output (constants.NUM_CLASSES)
+    assert model.dropout is not None
+
+    # Forward pass test
+    n_samples = 4
+    dummy_input = torch.randn(n_samples, 1, input_size, input_size)
+    output = model(dummy_input)
+    assert output.shape == (n_samples, n_classes)
+
+
+def test_simple_cnn_none_dropout_none_pool():
+    conv_specs = [
+        ConvSpec(
+            out_channels=4, kernel_size=3, padding=0, pool=None, stride=1
+        ),  # size: 28 -> 26
+    ]
+    model_config = SimpleCNNModelConfig(
+        conv_layers=conv_specs, fc_hidden=[], dropout=None
+    )
+
+    model = SimpleCNN(input_channels=1, input_size=28, model_config=model_config)
+    assert model.dropout is None
+    assert len(model.fcs) == 1  # only input_features -> NUM_CLASSES
+
+    dummy_input = torch.randn(2, 1, 28, 28)
+    output = model(dummy_input)
+    assert output.shape == (2, 10)

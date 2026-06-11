@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset, default_collate
 from torchvision.transforms import v2
 
-from cifar import config, constants
+from cifar.from_scratch import config, constants
 
 
 class Cifar100Dataset(Dataset):

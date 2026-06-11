@@ -136,8 +136,8 @@ def test_get_dataloaders_mnist(mock_load_test, mock_load_train):
 # ==========================================
 
 
-@patch("mnist.main.train_utils.save_model")
-@patch("mnist.main.train_utils.train_many_epochs")
+@patch("mnist.main.training.save_model")
+@patch("mnist.main.training.train_many_epochs")
 @patch("mnist.main.load_data.get_dataloaders")
 @patch("mnist.main.SummaryWriter")
 @patch("mnist.main.torch.compile")

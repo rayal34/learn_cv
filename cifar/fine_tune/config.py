@@ -2,7 +2,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any, Optional
 
-from base.config import (
+from core.config import (
     DataAugmentationConfig,
     DataConfig,
     EarlyStoppingConfig,
@@ -17,9 +17,10 @@ class ExperimentConfig:
     dataset: DataConfig
     train_augmentations: DataAugmentationConfig
     training: TrainingConfig
-    model: Any
     scheduler: SchedulerConfig
     optimizer: GenericConfig
+
+    model: Any
 
     name: str = field(
         default_factory=lambda: datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -37,7 +38,7 @@ class ExperimentConfig:
             "dataset": asdict(self.dataset),
             "training": asdict(self.training),
             "train_augmentations": asdict(self.train_augmentations),
-            "model": asdict(self.model),
+            "model": asdict(self.model) if self.model is not None else None,
             "scheduler": asdict(self.scheduler),
             "optimizer": asdict(self.optimizer),
             "early_stopping": asdict(self.early_stopping)

@@ -5,13 +5,13 @@ from typing import cast
 
 import torch
 import torch.nn as nn
+from core import training
+from core.loss_functions import SoftCrossEntropyLoss
 from models.resnet import ResNetShallow
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
-from utils import train_utils
-from utils.loss_functions import SoftCrossEntropyLoss
 
-from cifar import config, constants, load_data
+from cifar.from_scratch import config, constants, load_data
 from cifar.utils import get_optimizer_and_scheduler
 
 OmegaConf.register_new_resolver(
@@ -26,7 +26,7 @@ def main(config_path: str, profile: bool = False):
     exp_config = cast(
         config.ExperimentConfig, OmegaConf.merge(base_config, yaml_config)
     )
-    train_utils.seed_everything(exp_config.seed)
+    training.seed_everything(exp_config.seed)
 
     train_config = exp_config.training
     data_config = exp_config.dataset
@@ -45,7 +45,7 @@ def main(config_path: str, profile: bool = False):
         device = torch.device("cpu")
     print(f"Using device: {device}")
 
-    train_utils.print_model_summary(
+    training.print_model_summary(
         model,
         (
             constants.INPUT_CHANNELS,
@@ -61,7 +61,7 @@ def main(config_path: str, profile: bool = False):
     )
 
     if exp_config.early_stopping:
-        early_stopping = train_utils.EarlyStoppingWithCheckpoint(
+        early_stopping = training.EarlyStoppingWithCheckpoint(
             model_path=data_config.model_path,
             model_name=exp_config.name,
             patience=exp_config.early_stopping.patience,
@@ -92,7 +92,7 @@ def main(config_path: str, profile: bool = False):
         profiler_dir = f"{data_config.experiment_path}/{exp_config.name}/profile"
         num_epochs = 5
 
-    model = train_utils.train_many_epochs(
+    model = training.train_many_epochs(
         epochs=num_epochs,
         train_dataloader=train_dataloader,
         test_dataloader=test_dataloader,
@@ -112,7 +112,7 @@ def main(config_path: str, profile: bool = False):
         writer.close()
 
     if not profile and early_stopping is None:
-        train_utils.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
+        training.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
 
 
 if __name__ == "__main__":
