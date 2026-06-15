@@ -5,14 +5,15 @@ import torch
 import yaml
 from cifar.from_scratch.config import ExperimentConfig
 from cifar.from_scratch.load_data import (
-    Cifar100Dataset,
     get_dataloaders,
+)
+from cifar.from_scratch.main import main
+from cifar.utils.dataset import (
+    Cifar100Dataset,
     get_label_mappings,
     load_dataset,
     unpickle,
 )
-from cifar.from_scratch.main import main
-from cifar.utils import get_optimizer_and_scheduler
 from core.config import (
     DataAugmentationConfig,
     DataConfig,
@@ -21,6 +22,7 @@ from core.config import (
     SchedulerConfig,
     TrainingConfig,
 )
+from core.training import get_optimizer_and_scheduler
 from models.config import (
     ConvSpec,
     ResNetShallowModelConfig,
@@ -89,10 +91,9 @@ def test_cifar_experiment_config_to_dict():
 def test_cifar_dataset():
     # 2 images, size 3 channels, 32 height, 32 width
     imgs = np.zeros((2, 3, 32, 32), dtype=np.uint8)
-    labels = ["apple", "banana"]
-    label_int_mapping = {"apple": 0, "banana": 1}
+    labels = [0, 1]
 
-    dataset = Cifar100Dataset(imgs, labels, label_int_mapping)
+    dataset = Cifar100Dataset(imgs, labels)
     assert len(dataset) == 2
 
     img, lbl = dataset[0]
@@ -102,7 +103,7 @@ def test_cifar_dataset():
 
     # Cover transforms path
     dataset_with_transforms = Cifar100Dataset(
-        imgs, labels, label_int_mapping, transforms=lambda x: x + 1.0
+        imgs, labels, transforms=lambda x: x + 1.0
     )
     img_transformed, _ = dataset_with_transforms[0]
     assert torch.allclose(img_transformed, torch.ones(3, 32, 32))
@@ -120,7 +121,7 @@ def test_unpickle(mock_pickle_load, mock_open):
     mock_pickle_load.assert_called_once_with(mock_file, encoding="latin1")
 
 
-@patch("cifar.from_scratch.load_data.unpickle")
+@patch("cifar.utils.dataset.unpickle")
 def test_get_label_mappings(mock_unpickle):
     mock_unpickle.return_value = {"fine_label_names": ["apple", "banana"]}
     label_int_mapping, int_label_mapping = get_label_mappings("dummy_path")
@@ -128,13 +129,8 @@ def test_get_label_mappings(mock_unpickle):
     assert int_label_mapping == {0: "apple", 1: "banana"}
 
 
-@patch("cifar.from_scratch.load_data.unpickle")
-@patch("cifar.from_scratch.load_data.get_label_mappings")
-def test_load_dataset(mock_get_label_mappings, mock_unpickle):
-    mock_get_label_mappings.return_value = (
-        {"apple": 0, "banana": 1},
-        {0: "apple", 1: "banana"},
-    )
+@patch("cifar.utils.dataset.unpickle")
+def test_load_dataset(mock_unpickle):
     # 4 images
     dummy_data = np.zeros((4, 3072), dtype=np.uint8)
     mock_unpickle.return_value = {
@@ -157,9 +153,8 @@ def test_load_dataset(mock_get_label_mappings, mock_unpickle):
 @patch("cifar.from_scratch.load_data.load_dataset")
 def test_get_dataloaders(mock_load_dataset):
     imgs = np.zeros((8, 3, 32, 32), dtype=np.uint8)
-    labels = ["apple"] * 8
-    label_int_mapping = {"apple": 0}
-    dummy_dataset = Cifar100Dataset(imgs, labels, label_int_mapping)
+    labels = [0] * 8
+    dummy_dataset = Cifar100Dataset(imgs, labels)
 
     mock_load_dataset.return_value = dummy_dataset
 

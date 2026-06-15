@@ -11,11 +11,12 @@ from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.models import ResNet50_Weights, resnet50
 
-from cifar.fine_tune import config, constants, load_data
-from cifar.utils import get_optimizer_and_scheduler
+from cifar import constants as cifar_constants
+from cifar.fine_tune import config, load_data
+from cifar.fine_tune.constants import RESNET_INPUT_SIZE
 
 OmegaConf.register_new_resolver(
-    "constant", lambda name: getattr(constants, name), replace=True
+    "cifar_constants", lambda name: getattr(cifar_constants, name), replace=True
 )
 
 
@@ -37,7 +38,7 @@ def main(config_path: str, profile: bool = False):
 
     model = fine_tuning.FineTuneResNet(
         resnet50(weights=ResNet50_Weights.IMAGENET1K_V2),
-        constants.NUM_CLASSES,
+        cifar_constants.NUM_CLASSES,
         freeze_bn="stats",
     )
     model = fine_tuning.freeze_layers(model, prefix_layers_to_train=["backbone.fc"])
@@ -55,13 +56,13 @@ def main(config_path: str, profile: bool = False):
     training.print_model_summary(
         model,
         (
-            constants.INPUT_CHANNELS,
-            constants.INPUT_HEIGHT,
-            constants.INPUT_WIDTH,
+            cifar_constants.INPUT_CHANNELS,
+            RESNET_INPUT_SIZE,
+            RESNET_INPUT_SIZE,
         ),
     )
 
-    optimizer, scheduler = get_optimizer_and_scheduler(
+    optimizer, scheduler = training.get_optimizer_and_scheduler(
         model=model,
         exp_config=exp_config,
         train_dataloader=train_dataloader,

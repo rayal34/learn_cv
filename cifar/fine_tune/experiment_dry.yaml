@@ -1,5 +1,5 @@
 seed: 42
-dry_run: false
+dry_run: true
 
 dataset:
   root: "/Volumes/satechi/ml_projects/cifar"
@@ -16,22 +16,22 @@ train_augmentations:
         degrees: [-5.0, 5.0]
     - type: RandomCrop
       params:
-        size: 224
+        size: ${dataset:INPUT_HEIGHT}
         padding: 2
         padding_mode: "reflect"
   dataloader_augmentations:
     - type: CutMix
       params:
         alpha: 0.2
-        num_classes: ${cifar_constants:NUM_CLASSES}
+        num_classes: ${dataset:NUM_CLASSES}
     - type: MixUp
       params:
         alpha: 0.2
-        num_classes: ${cifar_constants:NUM_CLASSES}
+        num_classes: ${dataset:NUM_CLASSES}
 
 training:
   batch_size: 256
-  num_epochs: 200
+  num_epochs: 1
 
 scheduler:
   type: OneCycleLR

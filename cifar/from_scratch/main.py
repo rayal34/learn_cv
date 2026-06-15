@@ -11,11 +11,12 @@ from models.resnet import ResNetShallow
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 
-from cifar.from_scratch import config, constants, load_data
-from cifar.utils import get_optimizer_and_scheduler
+from cifar import constants
+from cifar.from_scratch import config, load_data
+from cifar.utils import dataset
 
 OmegaConf.register_new_resolver(
-    "constant", lambda name: getattr(constants, name), replace=True
+    "constant", lambda name: getattr(dataset, name), replace=True
 )
 
 
@@ -54,7 +55,7 @@ def main(config_path: str, profile: bool = False):
         ),
     )
 
-    optimizer, scheduler = get_optimizer_and_scheduler(
+    optimizer, scheduler = training.get_optimizer_and_scheduler(
         model=model,
         exp_config=exp_config,
         train_dataloader=train_dataloader,

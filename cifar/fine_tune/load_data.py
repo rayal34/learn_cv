@@ -1,107 +1,51 @@
-import os
-import pickle as pk
-
 import torch
-from torch.utils.data import DataLoader, Dataset, default_collate
+from torch.utils.data import DataLoader, default_collate
 from torchvision.transforms import v2
 
 from cifar.fine_tune import config, constants
-
-
-class Cifar100Dataset(Dataset):
-    def __init__(self, imgs, labels, label_int_mapping, transforms=None):
-        self.imgs = torch.from_numpy(imgs)
-
-        int_labels = [label_int_mapping[label] for label in labels]
-        self.labels = torch.tensor(int_labels, dtype=torch.long)
-        self.transforms = transforms
-
-    def __getitem__(self, index):
-        img = self.imgs[index]
-        label = self.labels[index]
-        if self.transforms:
-            img = self.transforms(img)
-        return img, label
-
-    def __len__(self):
-        return len(self.labels)
-
-
-def unpickle(file_path):
-    with open(file_path, "rb") as f:
-        dict_data = pk.load(f, encoding="latin1")
-    return dict_data
-
-
-def get_label_mappings(file_path):
-    meta = unpickle(file_path)
-    label_int_mapping, int_label_mapping = {}, {}
-    for i, label in enumerate(meta["fine_label_names"]):
-        label_int_mapping[label] = i
-        int_label_mapping[i] = label
-    return label_int_mapping, int_label_mapping
-
-
-def load_dataset(
-    config: config.DataConfig,
-    train: bool = True,
-    dry_run: bool = False,
-    transforms=None,
-):
-    """
-    Load CIFAR-100 dataset from disk.
-
-    """
-    meta_path = os.path.join(config.data_path, "meta")
-    data_path = os.path.join(config.data_path, "train" if train else "test")
-
-    label_int_mapping, int_label_mapping = get_label_mappings(meta_path)
-    data = unpickle(data_path)
-
-    imgs, labels = data["data"], data["fine_labels"]
-    if dry_run:
-        imgs = imgs[:500]
-        labels = labels[:500]
-
-    imgs = imgs.reshape(
-        -1, constants.INPUT_CHANNELS, constants.INPUT_HEIGHT, constants.INPUT_WIDTH
-    )
-    labels = [int_label_mapping[label] for label in labels]
-
-    return Cifar100Dataset(imgs, labels, label_int_mapping, transforms)
+from cifar.utils.dataset import load_dataset
 
 
 def get_train_transforms(config: config.DataAugmentationConfig):
     return [getattr(v2, aug.type)(**aug.params) for aug in config.dataset_augmentations]
 
 
-def get_general_transforms():
-    transforms = [
+def get_pre_augmentation_transforms():
+    return [v2.Resize((constants.RESNET_INPUT_SIZE, constants.RESNET_INPUT_SIZE))]
+
+
+def get_post_augmentation_transforms():
+
+    return [
         v2.ToDtype(torch.float32, scale=True),
-        v2.Normalize(mean=constants.MEANS, std=constants.STDS),
+        v2.Normalize(mean=constants.RESNET_MEANS, std=constants.RESNET_STDS),
     ]
-    return transforms
 
 
 def get_dataloaders(config: config.ExperimentConfig):
 
-    if config.train_augmentations is not None:
-        train_transforms = get_train_transforms(config.train_augmentations)
-    else:
-        train_transforms = []
-    general_transforms = get_general_transforms()
-    all_transforms = train_transforms + general_transforms
+    train_transforms = get_train_transforms(config.train_augmentations)
+
+    pre_augmentation_transforms = get_pre_augmentation_transforms()
+    post_augmentation_transforms = get_post_augmentation_transforms()
+
     train_data = load_dataset(
         config.dataset,
         train=True,
         dry_run=config.dry_run,
-        transforms=v2.Compose(all_transforms),
+        transforms=v2.Compose(
+            pre_augmentation_transforms
+            + train_transforms
+            + post_augmentation_transforms
+        ),
     )
 
     test_data = load_dataset(
         config.dataset,
         train=False,
-        transforms=v2.Compose(general_transforms),
+        transforms=v2.Compose(
+            pre_augmentation_transforms + post_augmentation_transforms
+        ),
     )
 
     if config.train_augmentations.dataloader_augmentations is not None:
