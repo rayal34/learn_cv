@@ -14,6 +14,7 @@ from torchvision.models import ResNet50_Weights, resnet50
 from cifar import constants as cifar_constants
 from cifar.fine_tune import config, load_data
 from cifar.fine_tune.constants import RESNET_INPUT_SIZE
+from cifar.fine_tune.training import get_optimizer_and_scheduler
 
 OmegaConf.register_new_resolver(
     "cifar_constants", lambda name: getattr(cifar_constants, name), replace=True
@@ -39,9 +40,14 @@ def main(config_path: str, profile: bool = False):
     model = fine_tuning.FineTuneResNet(
         resnet50(weights=ResNet50_Weights.IMAGENET1K_V2),
         cifar_constants.NUM_CLASSES,
-        freeze_bn="stats",
     )
-    model = fine_tuning.freeze_layers(model, prefix_layers_to_train=["backbone.fc"])
+
+    if exp_config.fine_tune_freezing_strategy is not None:
+        freezing_func = getattr(
+            fine_tuning, exp_config.fine_tune_freezing_strategy.type
+        )
+
+        model = freezing_func(model, **exp_config.fine_tune_freezing_strategy.params)
 
     if torch.cuda.is_available():
         device = torch.device("cuda")
@@ -62,7 +68,7 @@ def main(config_path: str, profile: bool = False):
         ),
     )
 
-    optimizer, scheduler = training.get_optimizer_and_scheduler(
+    optimizer, scheduler = get_optimizer_and_scheduler(
         model=model,
         exp_config=exp_config,
         train_dataloader=train_dataloader,

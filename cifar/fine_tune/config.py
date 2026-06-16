@@ -29,6 +29,8 @@ class ExperimentConfig:
     dry_run: bool = False
     early_stopping: Optional[EarlyStoppingConfig] = None
 
+    fine_tune_freezing_strategy: Optional[GenericConfig] = None
+
     def to_dict(self) -> dict:
 
         return {
@@ -43,5 +45,8 @@ class ExperimentConfig:
             "optimizer": asdict(self.optimizer),
             "early_stopping": asdict(self.early_stopping)
             if self.early_stopping is not None
+            else None,
+            "fine_tune_freezing_strategy": asdict(self.fine_tune_freezing_strategy)
+            if self.fine_tune_freezing_strategy is not None
             else None,
         }

@@ -21,6 +21,8 @@ def freeze_bn_stats(model: nn.Module):
         if isinstance(module, nn.BatchNorm2d):
             module.eval()
 
+    return model
+
 
 def freeze_all_bn(model: nn.Module):
     for module in model.modules():
@@ -28,22 +30,20 @@ def freeze_all_bn(model: nn.Module):
             module.eval()
             for param in module.parameters():
                 param.requires_grad = False
+    return model
+
+
+def unfreeze_all_layers(model: nn.Module) -> nn.Module:
+    for param in model.parameters():
+        param.requires_grad = True
+    return model
 
 
 class FineTuneResNet(nn.Module):
-    def __init__(self, backbone: nn.Module, num_classes: int, freeze_bn: str = "none"):
+    def __init__(self, backbone: nn.Module, num_classes: int):
         super().__init__()
         self.backbone = backbone
-        replace_head(self.backbone, num_classes)
-        self.freeze_bn = freeze_bn
-
-    def train(self, mode: bool = True):
-        super().train(mode)
-        if self.freeze_bn == "stats":
-            freeze_bn_stats(self)
-        elif self.freeze_bn == "all":
-            freeze_all_bn(self)
-        return self
+        self.backbone = replace_head(self.backbone, num_classes)
 
     def forward(self, x):
         return self.backbone(x)

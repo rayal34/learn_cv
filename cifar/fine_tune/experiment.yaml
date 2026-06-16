@@ -1,5 +1,5 @@
 seed: 42
-dry_run: false
+dry_run: true
 
 dataset:
   root: "/Volumes/satechi/ml_projects/cifar"
@@ -43,10 +43,21 @@ scheduler:
 optimizer:
   type: AdamW
   params:
-    lr: 1e-3
-    weight_decay: 1e-2
+    head_lr: 1e-3
+    head_weight_decay: 1e-4
+    backbone_lr: 1e-4
+    backbone_weight_decay: 1e-4
 
 early_stopping:
   patience: 30
   min_delta: 0
   higher_is_better: true
+
+fine_tune_freezing_strategy: null
+
+# fine_tune_freezing_strategy:
+#   - type: freeze_layers
+#     params:
+#       prefix_layers_to_train: ["backbone.fc"]
+#   - type: freeze_bn_stats
+#     params: {}
