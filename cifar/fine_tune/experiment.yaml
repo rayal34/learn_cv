@@ -1,5 +1,5 @@
 seed: 42
-dry_run: true
+dry_run: false
 
 dataset:
   root: "/Volumes/satechi/ml_projects/cifar"
@@ -34,11 +34,11 @@ training:
   num_epochs: 200
 
 scheduler:
-  type: OneCycleLR
-  update_freq: step
+  type: CosineAnnealingWarmRestarts
   params:
-    max_lr: 1e-2
-    pct_start: 0.1
+    T_0: 10
+    T_mult: 2
+    eta_min: 1e-6
 
 optimizer:
   type: AdamW
