@@ -12,7 +12,10 @@ training:
   batch_size: 256
   num_epochs: 100
 
-  early_stopping: true
+early_stopping:
+  patience: 30
+  min_delta: 0
+  higher_is_better: true
 
 scheduler:
   type: ReduceLROnPlateau

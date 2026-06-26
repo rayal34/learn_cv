@@ -2,17 +2,13 @@ from unittest.mock import ANY, MagicMock, patch
 
 import torch
 import yaml
-from mnist.config import (
-    DataConfig,
-    ExperimentConfig,
-    GenericConfig,
-    SchedulerConfig,
-    TrainingConfig,
-)
-from mnist.load_data import get_dataloaders, load_test_data, load_training_data
-from mnist.main import main
-from models.config import SimpleCNNModelConfig
 from omegaconf import MISSING
+
+from core.config import DataConfig, GenericConfig, SchedulerConfig, TrainingConfig
+from mnist.config import ExperimentConfig
+from mnist.main import main
+from mnist.utils.load_data import get_dataloaders, load_test_data, load_training_data
+from models.config import SimpleCNNModelConfig
 
 # ==========================================
 # Tests for mnist/config.py
@@ -74,7 +70,7 @@ def test_mnist_experiment_config_to_dict():
 # ==========================================
 
 
-@patch("mnist.load_data.datasets.MNIST")
+@patch("mnist.utils.load_data.datasets.MNIST")
 def test_load_training_and_test_data(mock_mnist):
     mock_dataset = MagicMock()
     mock_mnist.return_value = mock_dataset
@@ -92,8 +88,8 @@ def test_load_training_and_test_data(mock_mnist):
     )
 
 
-@patch("mnist.load_data.load_training_data")
-@patch("mnist.load_data.load_test_data")
+@patch("mnist.utils.load_data.load_training_data")
+@patch("mnist.utils.load_data.load_test_data")
 def test_get_dataloaders_mnist(mock_load_test, mock_load_train):
     mock_ds = MagicMock()
     # Mock length for DataLoader setup
@@ -136,9 +132,9 @@ def test_get_dataloaders_mnist(mock_load_test, mock_load_train):
 # ==========================================
 
 
-@patch("mnist.main.training.save_model")
+@patch("core.io.save_model")
 @patch("mnist.main.training.train_many_epochs")
-@patch("mnist.main.load_data.get_dataloaders")
+@patch("mnist.utils.load_data.get_dataloaders")
 @patch("mnist.main.SummaryWriter")
 @patch("mnist.main.torch.compile")
 @patch("mnist.main.OmegaConf.merge")

@@ -5,13 +5,13 @@ from typing import cast
 
 import torch
 import torch.nn as nn
-from core import training
-from models.cnn import SimpleCNN
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 
-from mnist import config, constants, load_data
-from mnist.utils import get_optimizer_and_scheduler
+from core import io, train_utils
+from mnist import config, constants
+from mnist.utils import load_data, training
+from models.cnn import SimpleCNN
 
 
 def main(config_path: str):
@@ -25,7 +25,7 @@ def main(config_path: str):
     train_config = exp_config.training
     data_config = exp_config.dataset
 
-    training.seed_everything(exp_config.seed)
+    train_utils.seed_everything(exp_config.seed)
 
     train_dataloader, test_dataloader = load_data.get_dataloaders(exp_config)
 
@@ -33,7 +33,7 @@ def main(config_path: str):
         constants.INPUT_CHANNELS, constants.INPUT_HEIGHT, exp_config.model
     )
     torch.compile(model, backend="aot_eager")
-    training.print_model_summary(
+    train_utils.print_model_summary(
         model,
         (
             constants.INPUT_CHANNELS,
@@ -42,7 +42,7 @@ def main(config_path: str):
         ),
     )
 
-    optimizer, scheduler = get_optimizer_and_scheduler(
+    optimizer, scheduler = training.get_optimizer_and_scheduler(
         model=model,
         exp_config=exp_config,
     )
@@ -81,7 +81,7 @@ def main(config_path: str):
         writer.close()
 
     if exp_config.early_stopping is not None:
-        training.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
+        io.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
 
 
 if __name__ == "__main__":

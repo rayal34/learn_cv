@@ -4,25 +4,20 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import torch
 import yaml
+from omegaconf import MISSING
+
 from core.augmentations import ZeroOneScale
-from fashion_mnist.config import (
-    DataAugmentationConfig,
-    DataConfig,
-    ExperimentConfig,
-    GenericConfig,
-    SchedulerConfig,
-    TrainingConfig,
-)
-from fashion_mnist.load_data import (
+from core.config import DataConfig, GenericConfig, SchedulerConfig, TrainingConfig
+from fashion_mnist.config import DataAugmentationConfig, ExperimentConfig
+from fashion_mnist.main import main
+from fashion_mnist.utils.load_data import (
     FashionMNISTDataset,
     get_dataloaders,
     load_dataset,
     load_images,
     load_labels,
 )
-from fashion_mnist.main import main
 from models.config import SimpleCNNModelConfig
-from omegaconf import MISSING
 
 # ==========================================
 # Tests for fashion_mnist/config.py
@@ -146,8 +141,8 @@ def test_load_labels():
     assert np.array_equal(labels, dummy_labels)
 
 
-@patch("fashion_mnist.load_data.load_images")
-@patch("fashion_mnist.load_data.load_labels")
+@patch("fashion_mnist.utils.load_data.load_images")
+@patch("fashion_mnist.utils.load_data.load_labels")
 def test_load_dataset(mock_load_labels, mock_load_images):
     mock_load_images.return_value = np.zeros((10, 1, 28, 28), dtype=np.uint8)
     mock_load_labels.return_value = np.ones((10,), dtype=np.uint8)
@@ -167,7 +162,7 @@ def test_load_dataset(mock_load_labels, mock_load_images):
     assert dataset.images.shape == (10, 1, 28, 28)
 
 
-@patch("fashion_mnist.load_data.load_dataset")
+@patch("fashion_mnist.utils.load_data.load_dataset")
 def test_get_dataloaders(mock_load_dataset):
     # Setup dummy datasets
     images = np.zeros((8, 1, 28, 28), dtype=np.uint8)
@@ -215,9 +210,9 @@ def test_get_dataloaders(mock_load_dataset):
 # ==========================================
 
 
-@patch("fashion_mnist.main.training.save_model")
-@patch("fashion_mnist.main.training.train_many_epochs")
-@patch("fashion_mnist.main.load_data.get_dataloaders")
+@patch("core.io.save_model")
+@patch("fashion_mnist.utils.training.train_many_epochs")
+@patch("fashion_mnist.utils.load_data.get_dataloaders")
 @patch("fashion_mnist.main.SummaryWriter")
 @patch("fashion_mnist.main.OmegaConf.merge")
 def test_fashion_mnist_main(

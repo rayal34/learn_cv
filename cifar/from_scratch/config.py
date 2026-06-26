@@ -1,32 +1,18 @@
-from dataclasses import asdict, dataclass, field
-from datetime import datetime
-from typing import Any, Optional
+from dataclasses import asdict, dataclass
+from typing import Optional
 
 from core.config import (
     DataAugmentationConfig,
-    DataConfig,
     EarlyStoppingConfig,
-    GenericConfig,
-    SchedulerConfig,
-    TrainingConfig,
+)
+from core.config import (
+    ExperimentConfig as CoreExperimentConfig,
 )
 
 
-@dataclass
-class ExperimentConfig:
-    dataset: DataConfig
+@dataclass(kw_only=True)
+class ExperimentConfig(CoreExperimentConfig):
     train_augmentations: DataAugmentationConfig
-    training: TrainingConfig
-    scheduler: SchedulerConfig
-    optimizer: GenericConfig
-
-    model: Any
-
-    name: str = field(
-        default_factory=lambda: datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    )
-    seed: int = 42
-    dry_run: bool = False
     early_stopping: Optional[EarlyStoppingConfig] = None
 
     def to_dict(self) -> dict:

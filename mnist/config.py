@@ -1,14 +1,10 @@
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 
 from core.config import (
-    DataConfig,
     EarlyStoppingConfig,
-    GenericConfig,
-    SchedulerConfig,
-    TrainingConfig,
 )
+from core.config import ExperimentConfig as CoreExperimentConfig
 
 
 @dataclass
@@ -21,17 +17,7 @@ class DataAugmentationConfig:
 
 
 @dataclass
-class ExperimentConfig:
-    dataset: DataConfig
-    training: TrainingConfig
-    model: Any
-    scheduler: SchedulerConfig
-    optimizer: GenericConfig
-    name: str = field(
-        default_factory=lambda: datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    )
-    seed: int = 42
-    dry_run: bool = False
+class ExperimentConfig(CoreExperimentConfig):
     data_augmentations: DataAugmentationConfig = field(
         default_factory=DataAugmentationConfig
     )

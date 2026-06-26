@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
-from fashion_mnist import constants
 
+from fashion_mnist import constants
 from models import config
 
 
@@ -53,7 +53,7 @@ class SimpleCNN(nn.Module):
         for block in self.conv_blocks:
             x = block(x)
         x = self.flatten(x)
-        for fc in self.fcs[:-1]:  # type: ignore
+        for fc in self.fcs[:-1]:
             x = F.relu(fc(x))
             if self.dropout is not None:
                 x = self.dropout(x)

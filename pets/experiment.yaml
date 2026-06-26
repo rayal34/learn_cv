@@ -1,0 +1,68 @@
+seed: 42
+dry_run: true
+
+dataset:
+  root: "/Volumes/satechi/ml_projects/pets_simple"
+  annot_dir: "/Volumes/satechi/ml_projects/pets_simple/annot"
+  image_dir: "/Volumes/satechi/ml_projects/pets_simple/images"
+
+  train_path: "/Volumes/satechi/ml_projects/pets_simple/data/train.npz"
+  val_path: "/Volumes/satechi/ml_projects/pets_simple/data/val.npz"
+
+  num_workers: 0
+  pin_memory: false
+
+train_augmentations:
+  dataset_augmentations:
+    - type: RandomHorizontalFlip
+      params:
+        p: 0.5
+    - type: RandomRotation
+      params:
+        degrees: [-5.0, 5.0]
+    - type: RandomCrop
+      params:
+        size: 224
+        padding: 2
+        padding_mode: "reflect"
+  dataloader_augmentations:
+    - type: CutMix
+      params:
+        alpha: 0.2
+        num_classes: ${constants:NUM_CLASSES}
+    - type: MixUp
+      params:
+        alpha: 0.2
+        num_classes: ${constants:NUM_CLASSES}
+
+training:
+  batch_size: 256
+  num_epochs: 200
+
+model:
+  clf_fc_layers:
+    - out_features: 256
+  bbox_fc_layers:
+    - out_features: 256
+
+scheduler:
+  type: CosineAnnealingWarmRestarts
+  params:
+    T_0: 10
+    T_mult: 2
+    eta_min: 1e-6
+
+optimizer:
+  type: AdamW
+  params:
+    head_lr: 1e-3
+    head_weight_decay: 1e-4
+    backbone_lr: 1e-4
+    backbone_weight_decay: 1e-4
+
+early_stopping:
+  patience: 30
+  min_delta: 0
+  higher_is_better: true
+
+fine_tune_freezing_strategy: null

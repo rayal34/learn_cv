@@ -5,18 +5,19 @@ from typing import cast
 
 import torch
 import torch.nn as nn
-from core import training
-from core.loss_functions import SoftCrossEntropyLoss
-from models.resnet import ResNetShallow
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 
 from cifar import constants
-from cifar.from_scratch import config, load_data
-from cifar.utils import dataset
+from cifar.from_scratch import config
+from cifar.from_scratch.utils import load_data, training
+from core import train_utils
+from core.custom_loss_functions import SoftCrossEntropyLoss
+from core.io import save_model
+from models.resnet import ResNetShallow
 
 OmegaConf.register_new_resolver(
-    "constant", lambda name: getattr(dataset, name), replace=True
+    "constant", lambda name: getattr(constants, name), replace=True
 )
 
 
@@ -27,7 +28,7 @@ def main(config_path: str, profile: bool = False):
     exp_config = cast(
         config.ExperimentConfig, OmegaConf.merge(base_config, yaml_config)
     )
-    training.seed_everything(exp_config.seed)
+    train_utils.seed_everything(exp_config.seed)
 
     train_config = exp_config.training
     data_config = exp_config.dataset
@@ -46,7 +47,7 @@ def main(config_path: str, profile: bool = False):
         device = torch.device("cpu")
     print(f"Using device: {device}")
 
-    training.print_model_summary(
+    train_utils.print_model_summary(
         model,
         (
             constants.INPUT_CHANNELS,
@@ -62,7 +63,7 @@ def main(config_path: str, profile: bool = False):
     )
 
     if exp_config.early_stopping:
-        early_stopping = training.EarlyStoppingWithCheckpoint(
+        early_stopping = train_utils.EarlyStoppingWithCheckpoint(
             model_path=data_config.model_path,
             model_name=exp_config.name,
             patience=exp_config.early_stopping.patience,
@@ -113,7 +114,7 @@ def main(config_path: str, profile: bool = False):
         writer.close()
 
     if not profile and early_stopping is None:
-        training.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
+        save_model(model, data_config.model_path, f"{exp_config.name}.pt")
 
 
 if __name__ == "__main__":

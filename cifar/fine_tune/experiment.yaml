@@ -54,10 +54,3 @@ early_stopping:
   higher_is_better: true
 
 fine_tune_freezing_strategy: null
-
-# fine_tune_freezing_strategy:
-#   - type: freeze_layers
-#     params:
-#       prefix_layers_to_train: ["backbone.fc"]
-#   - type: freeze_bn_stats
-#     params: {}

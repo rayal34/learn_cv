@@ -5,13 +5,13 @@ from typing import cast
 
 import torch
 import torch.nn as nn
-from core import training
-from models.cnn import SimpleCNN
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 
-from fashion_mnist import config, constants, load_data
-from fashion_mnist.utils import get_optimizer_and_scheduler
+from core import io, train_utils
+from fashion_mnist import config, constants
+from fashion_mnist.utils import load_data, training
+from models.cnn import SimpleCNN
 
 
 def main(config_path: str):
@@ -26,7 +26,7 @@ def main(config_path: str):
     data_config = exp_config.dataset
     model_config = exp_config.model
 
-    training.seed_everything(exp_config.seed)
+    train_utils.seed_everything(exp_config.seed)
 
     train_dataloader, test_dataloader = load_data.get_dataloaders(exp_config)
 
@@ -41,7 +41,7 @@ def main(config_path: str):
         device = torch.device("cpu")
     print(f"Using device: {device}")
 
-    training.print_model_summary(
+    train_utils.print_model_summary(
         model,
         (
             constants.INPUT_CHANNELS,
@@ -50,7 +50,7 @@ def main(config_path: str):
         ),
     )
 
-    optimizer, scheduler = get_optimizer_and_scheduler(
+    optimizer, scheduler = training.get_optimizer_and_scheduler(
         model=model,
         exp_config=exp_config,
     )
@@ -58,7 +58,7 @@ def main(config_path: str):
     eval_loss_fn = nn.CrossEntropyLoss(reduction="sum")
 
     if exp_config.early_stopping:
-        early_stopping = training.EarlyStoppingWithCheckpoint(
+        early_stopping = train_utils.EarlyStoppingWithCheckpoint(
             model_path=data_config.model_path,
             model_name=exp_config.name,
             patience=exp_config.early_stopping.patience,
@@ -98,7 +98,7 @@ def main(config_path: str):
         writer.close()
 
     if exp_config.early_stopping is not None:
-        training.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
+        io.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
 
 
 if __name__ == "__main__":

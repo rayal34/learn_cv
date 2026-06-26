@@ -4,10 +4,11 @@ import numpy as np
 import torch
 import yaml
 from cifar.from_scratch.config import ExperimentConfig
-from cifar.from_scratch.load_data import (
+from cifar.from_scratch.main import main
+from cifar.from_scratch.utils.load_data import (
     get_dataloaders,
 )
-from cifar.from_scratch.main import main
+from cifar.from_scratch.utils.training import get_optimizer_and_scheduler
 from cifar.utils.dataset import (
     Cifar100Dataset,
     get_label_mappings,
@@ -22,7 +23,6 @@ from core.config import (
     SchedulerConfig,
     TrainingConfig,
 )
-from core.training import get_optimizer_and_scheduler
 from models.config import (
     ConvSpec,
     ResNetShallowModelConfig,
@@ -150,7 +150,7 @@ def test_load_dataset(mock_unpickle):
     assert dataset.imgs.shape == (4, 3, 32, 32)
 
 
-@patch("cifar.from_scratch.load_data.load_dataset")
+@patch("cifar.from_scratch.utils.load_data.load_dataset")
 def test_get_dataloaders(mock_load_dataset):
     imgs = np.zeros((8, 3, 32, 32), dtype=np.uint8)
     labels = [0] * 8
@@ -263,7 +263,7 @@ def test_get_optimizer_and_scheduler():
 @patch("cifar.from_scratch.main.SummaryWriter")
 @patch("cifar.from_scratch.main.load_data.get_dataloaders")
 @patch("cifar.from_scratch.main.training.train_many_epochs")
-@patch("cifar.from_scratch.main.training.save_model")
+@patch("core.io.save_model")
 def test_cifar_main(
     mock_save_model,
     mock_train_many_epochs,
@@ -333,7 +333,7 @@ def test_cifar_main(
     mock_save_model.assert_not_called()  # Because early_stopping is not None
 
 
-@patch("cifar.from_scratch.main.training.save_model")
+@patch("cifar.from_scratch.main.save_model")
 @patch("cifar.from_scratch.main.training.train_many_epochs")
 @patch("cifar.from_scratch.main.load_data.get_dataloaders")
 @patch("cifar.from_scratch.main.OmegaConf.merge")

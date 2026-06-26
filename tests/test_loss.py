@@ -1,5 +1,6 @@
 import torch
-from core.loss_functions import SoftCrossEntropyLoss
+
+from core.custom_loss_functions import SoftCrossEntropyLoss
 
 
 def test_soft_cross_entropy_loss_mean():

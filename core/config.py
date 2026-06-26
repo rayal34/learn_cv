@@ -2,6 +2,8 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+from core.train_utils import generate_default_exp_name
+
 
 @dataclass
 class DataConfig:
@@ -52,3 +54,18 @@ class EarlyStoppingConfig:
     patience: int
     min_delta: float
     higher_is_better: bool
+
+
+@dataclass
+class ExperimentConfig:
+    dataset: DataConfig
+    training: TrainingConfig
+    scheduler: SchedulerConfig
+    optimizer: GenericConfig
+
+    model: Any
+
+    name: str = field(default_factory=generate_default_exp_name)
+    seed: int = 42
+    dry_run: bool = False
+    early_stopping: Optional[EarlyStoppingConfig] = None

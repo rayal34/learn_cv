@@ -1,26 +1,22 @@
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
+
 from core.config import DataConfig, TrainingConfig
-from core.training import (
+from core.eval_utils import compute_accuracy
+from core.train_utils import (
     EarlyStoppingWithCheckpoint,
-    compute_accuracy,
-    eval_loop,
     generate_default_exp_name,
     save_model,
     seed_everything,
-    train_loop,
-    train_many_epochs,
 )
-from models.cnn import SimpleCNN
-from models.config import ConvSpec, SimpleCNNModelConfig
-from torch.utils.data import DataLoader, TensorDataset
 
 # ==========================================
-# Tests for core/training.py
+# Tests for core/eval_utils.py
 # ==========================================
 
 
@@ -29,6 +25,18 @@ def test_compute_accuracy():
     labels = torch.tensor([1, 0, 0])  # predictions: [1, 0, 1] vs [1, 0, 0] -> 2 correct
     acc = compute_accuracy(scores, labels)
     assert acc == 2.0
+
+
+def test_compute_accuracy_one_hot():
+    scores = torch.tensor([[0.1, 0.9], [0.8, 0.2], [0.3, 0.7]])
+    labels = torch.tensor([[0.0, 1.0], [1.0, 0.0], [1.0, 0.0]])
+    acc = compute_accuracy(scores, labels)
+    assert acc == 2.0
+
+
+# ==========================================
+# Tests for core/train_utils.py
+# ==========================================
 
 
 def test_early_stopping_with_checkpoint_higher_better(tmp_path):
@@ -153,63 +161,6 @@ def dummy_train_setup():
     return dataloader, model, loss_fn, optimizer, device
 
 
-def test_train_and_eval_loops(dummy_train_setup):
-    dataloader, model, loss_fn, optimizer, device = dummy_train_setup
-
-    # Test train_loop
-    loss, acc, update_scales = train_loop(dataloader, model, loss_fn, device, optimizer)
-    assert loss >= 0
-    assert 0.0 <= acc <= 1.0
-    assert isinstance(update_scales, dict)
-
-    # Test eval_loop
-    eval_loss, eval_acc = eval_loop(dataloader, model, device, loss_fn)
-    assert eval_loss >= 0
-    assert 0.0 <= eval_acc <= 1.0
-
-
-def test_train_many_epochs(dummy_train_setup, tmp_path):
-    dataloader, model, loss_fn, optimizer, device = dummy_train_setup
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
-
-    # Run 2 epochs without early stopping
-    model_out = train_many_epochs(
-        epochs=2,
-        train_dataloader=dataloader,
-        test_dataloader=dataloader,
-        model=model,
-        train_loss_fn=loss_fn,
-        eval_loss_fn=loss_fn,
-        device=device,
-        optimizer=optimizer,
-        scheduler=scheduler,
-        early_stopping=None,
-    )
-    assert model_out is model
-
-    # Run with early stopping
-    early_stopping = EarlyStoppingWithCheckpoint(
-        model_path=str(tmp_path / "models"),
-        model_name="test_many",
-        patience=1,
-    )
-    # Run for 5 epochs; early stopping will trigger because dummy scores won't improve consistently
-    train_many_epochs(
-        epochs=5,
-        train_dataloader=dataloader,
-        test_dataloader=dataloader,
-        model=model,
-        train_loss_fn=loss_fn,
-        eval_loss_fn=loss_fn,
-        device=device,
-        optimizer=optimizer,
-        scheduler=scheduler,
-        early_stopping=early_stopping,
-    )
-    # Should stop early or complete
-    assert early_stopping.best_score is not None
-
-
 # ==========================================
 # Tests for core/augmentations.py
 # ==========================================
@@ -266,64 +217,24 @@ def test_cutmix():
 # ==========================================
 
 
-def test_compute_accuracy_one_hot():
-    scores = torch.tensor([[0.1, 0.9], [0.8, 0.2], [0.3, 0.7]])
-    labels = torch.tensor([[0.0, 1.0], [1.0, 0.0], [1.0, 0.0]])
-    acc = compute_accuracy(scores, labels)
-    assert acc == 2.0
-
-
-@patch("core.training.torch.cuda.is_available")
-@patch("core.training.torch.cuda.manual_seed_all")
+@patch("core.train_utils.torch.cuda.is_available")
+@patch("core.train_utils.torch.cuda.manual_seed_all")
 def test_seed_everything_cuda(mock_seed_all, mock_cuda_avail):
     mock_cuda_avail.return_value = True
-    with patch("core.training.torch.backends.cudnn") as mock_cudnn:
+    with patch("core.train_utils.torch.backends.cudnn") as mock_cudnn:
         seed_everything(42)
         mock_seed_all.assert_called_with(42)
         assert mock_cudnn.deterministic is True
 
 
-@patch("core.training.torch.cuda.is_available")
-@patch("core.training.torch.backends.mps.is_available")
-@patch("core.training.torch.mps.manual_seed")
+@patch("core.train_utils.torch.cuda.is_available")
+@patch("core.train_utils.torch.backends.mps.is_available")
+@patch("core.train_utils.torch.mps.manual_seed")
 def test_seed_everything_mps(mock_mps_seed, mock_mps_avail, mock_cuda_avail):
     mock_cuda_avail.return_value = False
     mock_mps_avail.return_value = True
     seed_everything(42)
     mock_mps_seed.assert_called_with(42)
-
-
-def test_train_loop_with_profiler(dummy_train_setup, tmp_path):
-    dataloader, model, loss_fn, optimizer, device = dummy_train_setup
-    profiler_dir = str(tmp_path / "profile")
-    loss, acc, update_scales = train_loop(
-        dataloader, model, loss_fn, device, optimizer, profiler_dir=profiler_dir
-    )
-    assert loss >= 0
-    assert os.path.exists(profiler_dir)
-
-
-def test_train_many_epochs_with_scheduler_and_writer(dummy_train_setup, tmp_path):
-    dataloader, model, loss_fn, optimizer, device = dummy_train_setup
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1)
-    mock_writer = MagicMock()
-
-    model_out = train_many_epochs(
-        epochs=1,
-        train_dataloader=dataloader,
-        test_dataloader=dataloader,
-        model=model,
-        train_loss_fn=loss_fn,
-        eval_loss_fn=loss_fn,
-        device=device,
-        optimizer=optimizer,
-        scheduler=scheduler,
-        scheduler_update_freq="epoch",
-        early_stopping=None,
-        writer=mock_writer,
-    )
-    assert model_out is model
-    mock_writer.add_scalar.assert_called()
 
 
 # ==========================================
@@ -356,60 +267,3 @@ def test_training_config():
     )
     assert config.batch_size == 64
     assert config.num_epochs == 10
-
-
-# ==========================================
-# Tests for core/model.py
-# ==========================================
-
-
-def test_simple_cnn_init_and_forward():
-    # Define a small CNN configuration
-    input_size = 28
-    n_classes = 10
-    conv_specs = [
-        ConvSpec(
-            out_channels=8, kernel_size=3, padding=1, pool=2, stride=1
-        ),  # size: 28 -> 28 -> 14
-        ConvSpec(
-            out_channels=16, kernel_size=3, padding=0, pool=None, stride=1
-        ),  # size: 14 -> 12
-    ]
-    model_config = SimpleCNNModelConfig(
-        conv_layers=conv_specs, fc_hidden=[32], dropout=0.2
-    )
-
-    # Instantiate model
-    model = SimpleCNN(
-        input_channels=1, input_size=input_size, model_config=model_config
-    )
-
-    # Validate structure
-    assert len(model.conv_blocks) == 2
-    assert len(model.fcs) == 2  # hidden (32) + output (constants.NUM_CLASSES)
-    assert model.dropout is not None
-
-    # Forward pass test
-    n_samples = 4
-    dummy_input = torch.randn(n_samples, 1, input_size, input_size)
-    output = model(dummy_input)
-    assert output.shape == (n_samples, n_classes)
-
-
-def test_simple_cnn_none_dropout_none_pool():
-    conv_specs = [
-        ConvSpec(
-            out_channels=4, kernel_size=3, padding=0, pool=None, stride=1
-        ),  # size: 28 -> 26
-    ]
-    model_config = SimpleCNNModelConfig(
-        conv_layers=conv_specs, fc_hidden=[], dropout=None
-    )
-
-    model = SimpleCNN(input_channels=1, input_size=28, model_config=model_config)
-    assert model.dropout is None
-    assert len(model.fcs) == 1  # only input_features -> NUM_CLASSES
-
-    dummy_input = torch.randn(2, 1, 28, 28)
-    output = model(dummy_input)
-    assert output.shape == (2, 10)

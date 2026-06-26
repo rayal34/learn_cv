@@ -5,8 +5,6 @@ from typing import cast
 
 import torch
 import torch.nn as nn
-from core import fine_tuning, training
-from core.loss_functions import SoftCrossEntropyLoss
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.models import ResNet50_Weights, resnet50
@@ -14,7 +12,10 @@ from torchvision.models import ResNet50_Weights, resnet50
 from cifar import constants as cifar_constants
 from cifar.fine_tune import config, load_data
 from cifar.fine_tune.constants import RESNET_INPUT_SIZE
-from cifar.fine_tune.training import get_optimizer_and_scheduler
+from cifar.fine_tune.utils import fine_tuning, training
+from core import train_utils
+from core.custom_loss_functions import SoftCrossEntropyLoss
+from core.io import save_model
 
 OmegaConf.register_new_resolver(
     "cifar_constants", lambda name: getattr(cifar_constants, name), replace=True
@@ -30,17 +31,15 @@ def main(config_path: str, profile: bool = False):
     exp_config = cast(
         config.ExperimentConfig, OmegaConf.merge(base_config, yaml_config)
     )
-    training.seed_everything(exp_config.seed)
+    train_utils.seed_everything(exp_config.seed)
 
     train_config = exp_config.training
     data_config = exp_config.dataset
 
     train_dataloader, test_dataloader = load_data.get_dataloaders(exp_config)
 
-    model = fine_tuning.FineTuneResNet(
-        resnet50(weights=ResNet50_Weights.IMAGENET1K_V2),
-        cifar_constants.NUM_CLASSES,
-    )
+    model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
+    model = fine_tuning.replace_head(model, cifar_constants.NUM_CLASSES)
 
     if exp_config.fine_tune_freezing_strategy is not None:
         freezing_func = getattr(
@@ -59,7 +58,7 @@ def main(config_path: str, profile: bool = False):
         device = torch.device("cpu")
     print(f"Using device: {device}")
 
-    training.print_model_summary(
+    train_utils.print_model_summary(
         model,
         (
             cifar_constants.INPUT_CHANNELS,
@@ -68,14 +67,14 @@ def main(config_path: str, profile: bool = False):
         ),
     )
 
-    optimizer, scheduler = get_optimizer_and_scheduler(
+    optimizer, scheduler = training.get_optimizer_and_scheduler(
         model=model,
         exp_config=exp_config,
         train_dataloader=train_dataloader,
     )
 
     if exp_config.early_stopping:
-        early_stopping = training.EarlyStoppingWithCheckpoint(
+        early_stopping = train_utils.EarlyStoppingWithCheckpoint(
             model_path=data_config.model_path,
             model_name=exp_config.name,
             patience=exp_config.early_stopping.patience,
@@ -126,7 +125,7 @@ def main(config_path: str, profile: bool = False):
         writer.close()
 
     if not profile and early_stopping is None:
-        training.save_model(model, data_config.model_path, f"{exp_config.name}.pt")
+        save_model(model, data_config.model_path, f"{exp_config.name}.pt")
 
 
 if __name__ == "__main__":
