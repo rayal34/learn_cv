@@ -38,10 +38,10 @@ class ObjectDetectionFromResnet(nn.Module):
                         nn.ReLU(),
                     ]
                 )
-            fc_features_in = spec.out_features
+                fc_features_in = spec.out_features
 
         # doesn't directly predict the bounding box coordinates.  Instead predicts (batch, cx, cy, w', h') where
-        # cx, cy are the center coordinates and w = exp(w') and h = exp(h')
+        # cx, cy are the center coordinates and w = sigmoid(w') and h = sigmoid(h')
         bbox_fc_layers.append(nn.Linear(fc_features_in, out_features=4))
         self.bbox_fc_layers = nn.Sequential(*bbox_fc_layers)
 
@@ -53,7 +53,7 @@ class ObjectDetectionFromResnet(nn.Module):
 
         box_out = self.bbox_fc_layers(out)  # shape = (batch, cx, cy, w', h')
         centers = torch.sigmoid(box_out[:, [0, 1]])
-        w_h = torch.sigmoid(torch.exp(box_out[:, -2:]))
+        w_h = torch.sigmoid(box_out[:, -2:])
 
         x1 = centers[:, 0] - w_h[:, 0] / 2
         y1 = centers[:, 1] - w_h[:, 1] / 2

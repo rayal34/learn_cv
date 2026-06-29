@@ -5,6 +5,7 @@ from typing import cast
 
 import torch
 from omegaconf import OmegaConf
+from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.models import ResNet50_Weights, resnet50
 
@@ -14,13 +15,18 @@ from core.train_utils import (
     save_model,
     seed_everything,
 )
+from models import constants as model_constants
 from models.object_detection import ObjectDetectionFromResnet
-from pets import config, constants, load_data
-from pets.constants import RESNET_INPUT_SIZE
-from pets.utils import fine_tuning, training
+from pets import config, constants
+from pets.utils import fine_tuning, load_data, training
 
 OmegaConf.register_new_resolver(
     "constants", lambda name: getattr(constants, name), replace=True
+)
+
+
+OmegaConf.register_new_resolver(
+    "model_constants", lambda name: getattr(model_constants, name), replace=True
 )
 
 
@@ -55,10 +61,10 @@ def main(config_path: str, profile: bool = False):
 
     if torch.cuda.is_available():
         device = torch.device("cuda")
-        torch.compile(model)
+        model = cast(nn.Module, torch.compile(model))
     elif torch.backends.mps.is_available():
         device = torch.device("mps")
-        torch.compile(model, backend="aot_eager")
+        model = cast(nn.Module, torch.compile(model, backend="aot_eager"))
     else:
         device = torch.device("cpu")
     print(f"Using device: {device}")
@@ -67,8 +73,8 @@ def main(config_path: str, profile: bool = False):
         model,
         (
             constants.INPUT_CHANNELS,
-            RESNET_INPUT_SIZE,
-            RESNET_INPUT_SIZE,
+            model_constants.RESNET_INPUT_SIZE,
+            model_constants.RESNET_INPUT_SIZE,
         ),
     )
 
