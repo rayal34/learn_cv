@@ -22,7 +22,7 @@ train_augmentations:
         degrees: [-5.0, 5.0]
     - type: RandomCrop
       params:
-        size: ${model_constants:RESNET_IMAGE_SIZE}
+        size: ${model_constants:RESNET_INPUT_SIZE}
         padding: 2
         padding_mode: "reflect"
   dataloader_augmentations:
