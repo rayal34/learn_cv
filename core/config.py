@@ -46,7 +46,7 @@ class SchedulerConfig(GenericConfig):
 @dataclass
 class DataAugmentationConfig:
     dataset_augmentations: list[GenericConfig]
-    dataloader_augmentations: Optional[list[GenericConfig]]
+    dataloader_augmentations: Optional[list[GenericConfig]] = None
 
 
 @dataclass

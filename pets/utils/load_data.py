@@ -95,7 +95,7 @@ def get_dataloaders(config: config.ExperimentConfig):
 
 class PetsDataset(Dataset):
     def __init__(self, images, labels, boxes, transforms=None):
-        self.images = torch.from_numpy(images)
+        self.images = torch.from_numpy(images).permute(0, 3, 1, 2)
         self.labels = torch.from_numpy(labels)
 
         self.boxes = tv_tensors.BoundingBoxes(
@@ -127,7 +127,7 @@ class PetsDataset(Dataset):
         )
         label = self.labels[index]
 
-        return img, normalized_box_tensor, label
+        return img.as_subclass(torch.Tensor), normalized_box_tensor, label
 
 
 def parse_voc_xml(xml_path):
@@ -209,7 +209,7 @@ def create_train_val_split(
 
     is_train = np.zeros(n_rows, dtype=bool)
     is_train[train_indices] = True
-    data_df = data_df.with_columns(pl.lit(is_train).alias("is_train"))
+    data_df = data_df.with_columns(pl.Series(name="is_train", values=is_train))
     return data_df
 
 

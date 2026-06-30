@@ -25,15 +25,15 @@ train_augmentations:
         size: ${model_constants:RESNET_INPUT_SIZE}
         padding: 2
         padding_mode: "reflect"
-  dataloader_augmentations:
-    - type: CutMix
-      params:
-        alpha: 0.2
-        num_classes: ${constants:NUM_CLASSES}
-    - type: MixUp
-      params:
-        alpha: 0.2
-        num_classes: ${constants:NUM_CLASSES}
+  # dataloader_augmentations:
+  #   - type: CutMix
+  #     params:
+  #       alpha: 0.2
+  #       num_classes: ${constants:NUM_CLASSES}
+  #   - type: MixUp
+  #     params:
+  #       alpha: 0.2
+  #       num_classes: ${constants:NUM_CLASSES}
 
 training:
   batch_size: 256
