@@ -243,21 +243,17 @@ def test_seed_everything_mps(mock_mps_seed, mock_mps_avail, mock_cuda_avail):
 
 
 def test_data_config():
-    config = DataConfig(
-        root="/dummy/root",
-        num_workers=0,
-        pin_memory=False,
-        train_images_filename="train-images-idx3-ubyte",
-        train_labels_filename="train-labels-idx1-ubyte",
-        test_images_filename="t10k-images-idx3-ubyte",
-        test_labels_filename="t10k-labels-idx1-ubyte",
-    )
+    from omegaconf import OmegaConf
+
+    base_cfg = OmegaConf.structured(DataConfig)
+    config = OmegaConf.merge(base_cfg, OmegaConf.load("tests/test_config.yaml").dataset)
 
     assert config.root == "/dummy/root"
-    assert config.train_images_filename == "train-images-idx3-ubyte"
     assert config.data_path == "/dummy/root/data"
     assert config.model_path == "/dummy/root/models"
     assert config.experiment_path == "/dummy/root/experiments"
+    assert config.num_workers == 0
+    assert config.pin_memory is False
 
 
 def test_training_config():

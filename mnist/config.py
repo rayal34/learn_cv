@@ -1,10 +1,19 @@
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
+from core.config import DataConfig as CoreDataConfig
 from core.config import (
     EarlyStoppingConfig,
 )
 from core.config import ExperimentConfig as CoreExperimentConfig
+
+
+@dataclass
+class DataConfig(CoreDataConfig):
+    train_images_filename: Optional[str] = None
+    train_labels_filename: Optional[str] = None
+    test_images_filename: Optional[str] = None
+    test_labels_filename: Optional[str] = None
 
 
 @dataclass
@@ -18,6 +27,7 @@ class DataAugmentationConfig:
 
 @dataclass
 class ExperimentConfig(CoreExperimentConfig):
+    dataset: DataConfig
     data_augmentations: DataAugmentationConfig = field(
         default_factory=DataAugmentationConfig
     )

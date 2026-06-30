@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Optional
 
 from core import config
@@ -11,11 +11,11 @@ from core.config import (
 
 @dataclass(kw_only=True)
 class DataConfig(config.DataConfig):
-    annot_dir: str
-    image_dir: str
+    annot_dir: str = field(init=False, default="${.root}/annot")
+    image_dir: str = field(init=False, default="${.root}/images")
 
-    train_path: str
-    val_path: str
+    train_path: str = field(init=False, default="${.root}/data/train.npz")
+    val_path: str = field(init=False, default="${.root}/data/val.npz")
 
 
 @dataclass(kw_only=True)

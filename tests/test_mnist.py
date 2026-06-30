@@ -4,8 +4,8 @@ import torch
 import yaml
 from omegaconf import MISSING
 
-from core.config import DataConfig, GenericConfig, SchedulerConfig, TrainingConfig
-from mnist.config import ExperimentConfig
+from core.config import GenericConfig, SchedulerConfig, TrainingConfig
+from mnist.config import DataConfig, ExperimentConfig
 from mnist.main import main
 from mnist.utils.load_data import get_dataloaders, load_test_data, load_training_data
 from models.config import SimpleCNNModelConfig

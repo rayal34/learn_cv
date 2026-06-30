@@ -1,0 +1,5 @@
+dataset:
+  root: "/dummy/root"
+
+  num_workers: 0
+  pin_memory: false

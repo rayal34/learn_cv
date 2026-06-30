@@ -1,4 +1,3 @@
-import os
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
@@ -16,14 +15,9 @@ class DataConfig:
     test_images_filename: Optional[str] = None
     test_labels_filename: Optional[str] = None
 
-    data_path: str = field(init=False, default="${.root}/data")
-    model_path: str = field(init=False, default="${.root}/models")
-    experiment_path: str = field(init=False, default="${.root}/experiments")
-
-    def __post_init__(self):
-        self.data_path = os.path.join(self.root, "data")
-        self.model_path = os.path.join(self.root, "models")
-        self.experiment_path = os.path.join(self.root, "experiments")
+    data_path: str = "${.root}/data"
+    model_path: str = "${.root}/models"
+    experiment_path: str = "${.root}/experiments"
 
 
 @dataclass

@@ -7,8 +7,8 @@ import yaml
 from omegaconf import MISSING
 
 from core.augmentations import ZeroOneScale
-from core.config import DataConfig, GenericConfig, SchedulerConfig, TrainingConfig
-from fashion_mnist.config import DataAugmentationConfig, ExperimentConfig
+from core.config import GenericConfig, SchedulerConfig, TrainingConfig
+from fashion_mnist.config import DataAugmentationConfig, DataConfig, ExperimentConfig
 from fashion_mnist.main import main
 from fashion_mnist.utils.load_data import (
     FashionMNISTDataset,

@@ -4,11 +4,6 @@ import os
 from typing import cast
 
 import torch
-from omegaconf import OmegaConf
-from torch import nn
-from torch.utils.tensorboard import SummaryWriter
-from torchvision.models import ResNet50_Weights, resnet50
-
 from core.train_utils import (
     EarlyStoppingWithCheckpoint,
     print_model_summary,
@@ -17,6 +12,11 @@ from core.train_utils import (
 )
 from models import constants as model_constants
 from models.object_detection import ObjectDetectionFromResnet
+from omegaconf import OmegaConf
+from torch import nn
+from torch.utils.tensorboard import SummaryWriter
+from torchvision.models import ResNet50_Weights, resnet50
+
 from pets import config, constants
 from pets.utils import fine_tuning, load_data, training
 
