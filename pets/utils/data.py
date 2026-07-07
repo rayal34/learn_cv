@@ -238,8 +238,8 @@ def create_trainval_datasets(config: DataConfig, val_ratio: float = 0.2) -> None
         logging.info(f"Saving the {split} data to {save_path}")
         np.savez_compressed(
             save_path,
-            classes=split_df["class_id"].to_numpy(),
-            species=split_df["species_id"].to_numpy(),
+            class_id=split_df["class_id"].to_numpy(),
+            species_id=split_df["species_id"].to_numpy(),
             bboxes=split_df[coordinate_cols].to_numpy(),
             images=split_df["images"].to_numpy(),
         )
