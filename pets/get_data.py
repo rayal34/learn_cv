@@ -38,12 +38,6 @@ def untar(tar_path, destination):
     tar.close()
 
 
-def download_and_extract(save_destination_dir):
-    for url in [IMAGES_URL, ANNOTATIONS_URL]:
-        tar_path = download_tar(url, save_destination_dir)
-        untar(tar_path, save_destination_dir)
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -56,3 +50,8 @@ if __name__ == "__main__":
 
     cfg = OmegaConf.structured(DataConfig)
     cfg = OmegaConf.merge(cfg, OmegaConf.load(args.config).dataset)
+
+    save_dir = cfg.root
+    for url in [IMAGES_URL, ANNOTATIONS_URL]:
+        tar_path = download_tar(url, save_dir)
+        untar(tar_path, save_dir)
