@@ -51,7 +51,7 @@ if __name__ == "__main__":
     cfg = OmegaConf.structured(DataConfig)
     cfg = OmegaConf.merge(cfg, OmegaConf.load(args.config).dataset)
 
-    save_dir = cfg.root
+    save_dir = os.path.join(cfg.root, "data")
     for url in [IMAGES_URL, ANNOTATIONS_URL]:
         tar_path = download_tar(url, save_dir)
         untar(tar_path, save_dir)
