@@ -101,8 +101,8 @@ class PetsDataset(Dataset):
     def __init__(self, images, labels, boxes, transforms=None):
         self.images = torch.from_numpy(images).permute(0, 3, 1, 2)
         self.labels = torch.from_numpy(labels)
-        self.heights = self.images[:, 1]
-        self.widths = self.images[:, 2]
+        self.height = self.images.shape[2]
+        self.width = self.images.shape[3]
         self.boxes = tv_tensors.BoundingBoxes(
             torch.from_numpy(boxes),
             format="XYXY",
@@ -117,16 +117,14 @@ class PetsDataset(Dataset):
     def __getitem__(self, index):
         img = self.images[index]
         box = self.boxes[index]
-        width = self.widths[index]
-        height = self.heights[index]
         if self.transforms:
             img, box = self.transforms(img, box)
 
         normalized_box = box.clone()
-        normalized_box[0] /= width
-        normalized_box[1] /= height
-        normalized_box[2] /= width
-        normalized_box[3] /= height
+        normalized_box[0] /= self.width
+        normalized_box[1] /= self.height
+        normalized_box[2] /= self.width
+        normalized_box[3] /= self.height
         normalized_box_tensor = normalized_box.as_subclass(torch.Tensor).to(
             torch.float32
         )
