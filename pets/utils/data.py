@@ -196,6 +196,10 @@ def get_images(image_dir: str, filenames: list[str]) -> pl.Series:
 def parse_text_file(filename: str) -> pl.DataFrame:
     columns = ["image_id", "class_id", "species_id", "breed_id"]
     df = pl.read_csv(filename, separator=" ", has_header=False, new_columns=columns)
+    df = df.with_columns(
+        (pl.col("class_id") - 1).alias("class_id").cast(pl.Int32),
+        (pl.col("species_id") - 1).alias("species_id").cast(pl.Int32),
+    )
     return df
 
 
