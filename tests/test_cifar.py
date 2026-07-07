@@ -3,6 +3,8 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import torch
 import yaml
+from omegaconf import MISSING
+
 from cifar.from_scratch.config import ExperimentConfig
 from cifar.from_scratch.main import main
 from cifar.from_scratch.utils.load_data import (
@@ -28,7 +30,6 @@ from models.config import (
     ResNetShallowModelConfig,
     ResNetStemConfig,
 )
-from omegaconf import MISSING
 
 
 def test_cifar_experiment_config_to_dict():
@@ -36,10 +37,6 @@ def test_cifar_experiment_config_to_dict():
         root="/dummy_cifar",
         num_workers=0,
         pin_memory=False,
-        train_images_filename="train",
-        train_labels_filename="train",
-        test_images_filename="test",
-        test_labels_filename="test",
     )
     training_cfg = TrainingConfig(
         batch_size=128,

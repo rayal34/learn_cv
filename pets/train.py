@@ -4,6 +4,11 @@ import os
 from typing import cast
 
 import torch
+from omegaconf import OmegaConf
+from torch import nn
+from torch.utils.tensorboard import SummaryWriter
+from torchvision.models import ResNet50_Weights, resnet50
+
 from core.train_utils import (
     EarlyStoppingWithCheckpoint,
     print_model_summary,
@@ -12,13 +17,8 @@ from core.train_utils import (
 )
 from models import constants as model_constants
 from models.object_detection import ObjectDetectionFromResnet
-from omegaconf import OmegaConf
-from torch import nn
-from torch.utils.tensorboard import SummaryWriter
-from torchvision.models import ResNet50_Weights, resnet50
-
 from pets import config, constants
-from pets.utils import fine_tuning, load_data, training
+from pets.utils import data, fine_tuning, training
 
 OmegaConf.register_new_resolver(
     "constants", lambda name: getattr(constants, name), replace=True
@@ -31,20 +31,20 @@ OmegaConf.register_new_resolver(
 
 
 def main(config_path: str, profile: bool = False):
-    os.environ["TORCH_HOME"] = "/Volumes/satechi/ml_projects/"
 
     base_config = OmegaConf.structured(config.ExperimentConfig)
     yaml_config = OmegaConf.load(config_path)
-
     exp_config = cast(
         config.ExperimentConfig, OmegaConf.merge(base_config, yaml_config)
     )
+
     seed_everything(exp_config.seed)
 
     train_config = exp_config.training
     data_config = exp_config.dataset
 
-    train_dataloader, test_dataloader = load_data.get_dataloaders(exp_config)
+    os.environ["TORCH_HOME"] = data_config.torch_home
+    train_dataloader, test_dataloader = data.get_dataloaders(exp_config)
 
     model = ObjectDetectionFromResnet(
         backbone=resnet50(weights=ResNet50_Weights.IMAGENET1K_V2),

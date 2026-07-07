@@ -4,7 +4,7 @@ import torch
 from PIL import Image
 from torchvision import tv_tensors
 
-from pets.utils.load_data import parse_voc_xml
+from pets.utils.data import parse_xml
 
 
 def draw_boxes(ax, img, boxes, labels, title):
@@ -42,7 +42,7 @@ def show_transform_with_boxes(xml_path, img_path, transforms):
                          e.g. [v2.Resize((224, 224)), v2.RandomHorizontalFlip(p=1.0)]
     """
     # --- Load original image + boxes ---
-    boxes, labels, (xml_w, xml_h) = parse_voc_xml(xml_path)
+    boxes, labels, (xml_w, xml_h) = parse_xml(xml_path)
     img = Image.open(img_path).convert("RGB")
 
     # Sanity check: warn if XML size doesn't match actual image size

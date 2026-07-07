@@ -11,15 +11,18 @@ from core.config import (
 
 @dataclass(kw_only=True)
 class DataConfig(config.DataConfig):
-    annot_dir: str = field(init=False, default="${.root}/annot")
-    image_dir: str = field(init=False, default="${.root}/images")
+    torch_home: str
 
-    train_path: str = field(init=False, default="${.root}/data/train.npz")
-    val_path: str = field(init=False, default="${.root}/data/val.npz")
+    train_path: str = field(init=False, default="${.data_path}/train.npz")
+    val_path: str = field(init=False, default="${.data_path}/val.npz")
+    test_path: str = field(init=False, default="${.data_path}/test.npz")
+
+    val_ratio: float = 0.2
 
 
 @dataclass(kw_only=True)
 class ExperimentConfig(ExperimentConfig):
+    label: str
     dataset: DataConfig
     train_augmentations: DataAugmentationConfig
     fine_tune_freezing_strategy: Optional[GenericConfig] = None

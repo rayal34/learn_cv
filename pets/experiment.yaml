@@ -1,13 +1,10 @@
 seed: 42
 dry_run: true
+label: species
 
 dataset:
-  root: "/Volumes/satechi/ml_projects/pets_simple"
-  annot_dir: "/Volumes/satechi/ml_projects/pets_simple/annot"
-  image_dir: "/Volumes/satechi/ml_projects/pets_simple/images"
-
-  train_path: "/Volumes/satechi/ml_projects/pets_simple/data/train.npz"
-  val_path: "/Volumes/satechi/ml_projects/pets_simple/data/val.npz"
+  torch_home: "/Volumes/satechi/ml_projects/"
+  root: "/Volumes/satechi/ml_projects/pets"
 
   num_workers: 0
   pin_memory: false

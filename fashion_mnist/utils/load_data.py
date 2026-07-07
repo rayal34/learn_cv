@@ -6,7 +6,6 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import v2
 
 from core.augmentations import ZeroOneScale
-from core.config import DataConfig
 from fashion_mnist import config, constants
 
 
@@ -47,7 +46,7 @@ def load_labels(filename: str):
     return labels
 
 
-def load_dataset(config: DataConfig, train: bool = True, transforms=None):
+def load_dataset(config: config.DataConfig, train: bool = True, transforms=None):
     if train:
         images = load_images(f"{config.data_path}/{config.train_images_filename}")
         labels = load_labels(f"{config.data_path}/{config.train_labels_filename}")

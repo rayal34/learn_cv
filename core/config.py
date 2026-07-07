@@ -10,11 +10,6 @@ class DataConfig:
     num_workers: int
     pin_memory: bool
 
-    train_images_filename: Optional[str] = None
-    train_labels_filename: Optional[str] = None
-    test_images_filename: Optional[str] = None
-    test_labels_filename: Optional[str] = None
-
     data_path: str = "${.root}/data"
     model_path: str = "${.root}/models"
     experiment_path: str = "${.root}/experiments"
