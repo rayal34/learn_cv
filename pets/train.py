@@ -62,6 +62,7 @@ def main(config_path: str, profile: bool = False):
     if torch.cuda.is_available():
         device = torch.device("cuda")
         model = cast(nn.Module, torch.compile(model))
+        torch.set_float32_matmul_precision("high")
     elif torch.backends.mps.is_available():
         device = torch.device("mps")
         model = cast(nn.Module, torch.compile(model, backend="aot_eager"))
